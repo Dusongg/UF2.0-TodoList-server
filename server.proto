@@ -5,11 +5,22 @@ option go_package = "../pb";
 // 定义服务
 service Service {
   rpc Login (LoginRequest) returns (LoginReply);
+
+  //修改单/任务
   rpc GetTaskListAll (GetTaskListAllRequest) returns (GetTaskListAllReply);
   rpc GetTaskListOne (GetTaskListOneRequest) returns (GetTaskListOneReply);
-
   rpc ImportToTaskListTable (ImportToTaskListRequest) returns (ImportToTaskListReply);
+//  rpc AddTask (AddTaskRequest) returns (AddTaskReply);
+  rpc DelTask (DelTaskRequest) returns (DelTaskReply);
+  rpc ModTask (ModTaskRequest) returns (ModTaskReply);
+
+
+  //补丁
+  rpc GetPatchsAll (GetPatchsAllRequest) returns (GetPatchsAllReply);
+  rpc ModDeadLineInPatchs (MDLIPRequest) returns (MDLIPReply);
+  rpc DelPatch (DelPatchRequest) returns (DelPatchReply);
   rpc ImportXLSToPatchTable (ImportXLSToPatchRequest) returns (ImportXLSToPatchReply);
+
 
 }
 
@@ -73,3 +84,33 @@ message ImportXLSToPatchRequest {
 }
 
 message ImportXLSToPatchReply {}
+
+message GetPatchsAllRequest {}
+
+message GetPatchsAllReply {
+  repeated patch patchs  = 1;
+}
+
+message MDLIPRequest {
+  string patchNo = 1;
+  string newDeadline = 2;
+}
+message MDLIPReply {}
+
+message DelPatchRequest {
+  string patchNo = 1;
+}
+message  DelPatchReply {}
+
+message DelTaskRequest {
+  string taskNo = 1;
+}
+message DelTaskReply {}
+
+message ModTaskRequest {
+  string field = 1;
+  string fieldValue = 2;
+  string taskNo = 3;
+}
+
+message ModTaskReply {}

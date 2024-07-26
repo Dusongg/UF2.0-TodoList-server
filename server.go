@@ -137,3 +137,68 @@ func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPa
 	}
 	return &pb.ImportXLSToPatchReply{}, nil
 }
+
+// 修改补丁时间，其下的修改单日期也一同修改
+func (s *server) ModDeadLineInPatchs(ctx context.Context, in *pb.MDLIPRequest) (*pb.MDLIPReply, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatalf("failed to begin transaction: %v", err)
+	}
+
+	newDeadline, patchNo := in.NewDeadline, in.PatchNo
+	_, err = tx.Exec("update patch_table set deadline = ? where patch_no = ?", newDeadline, patchNo)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	_, err = tx.Exec("update tasklist_table tt set deadline = LEAST(tt.deadline, ?) where tt.req_no in (select req_no from patch_table where patch_no = ?)", newDeadline, patchNo)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	err = tx.Commit()
+	if err != nil {
+		log.Fatalf("failed to commit transaction: %v", err)
+	}
+	return &pb.MDLIPReply{}, nil
+}
+
+func (s *server) DelPatch(ctx context.Context, in *pb.DelPatchRequest) (*pb.DelPatchReply, error) {
+	patchNo := in.PatchNo
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatalf("failed to begin transaction: %v", err)
+	}
+	_, err = tx.Exec("delete from tasklist_table where tasklist_table.req_no in (select req_no from patch_table where patch_no = ?)", patchNo)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	_, err = tx.Exec("delete from patch_table where patch_no = ?", patchNo)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	err = tx.Commit()
+	if err != nil {
+		log.Fatalf("failed to commit transaction: %v", err)
+	}
+	return &pb.DelPatchReply{}, nil
+}
+
+func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTaskReply, error) {
+	_, err := db.Exec("delete from tasklist_table where task_id = ?", in.TaskNo)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.DelTaskReply{}, nil
+}
+func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTaskReply, error) {
+	_, err := db.Exec("update tasklist_table set ? = ? where task_id = ?", in.Field, in.FieldValue, in.TaskNo)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.ModTaskReply{}, nil
+}
