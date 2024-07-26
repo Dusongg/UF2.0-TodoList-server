@@ -76,6 +76,7 @@ func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskL
 	//task_id,  principal,s tate,   升级说明： task_id, req_no,comment
 	//遇到重复任务直接跳过
 	//若需要覆盖，则需要将insert加上ON DUPLICATE KEY UPDATE
+	var insertCnt int32 = 0
 	stmt, err := tx.Prepare("INSERT IGNORE INTO tasklist_table (task_id, req_no, comment, principal, state) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
 		tx.Rollback()
@@ -89,6 +90,7 @@ func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskL
 			tx.Rollback()
 			return nil, err
 		}
+		insertCnt++
 	}
 
 	// 提交事务
@@ -96,7 +98,7 @@ func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskL
 	if err != nil {
 		log.Fatalf("failed to commit transaction: %v", err)
 	}
-	return &pb.ImportToTaskListReply{}, nil
+	return &pb.ImportToTaskListReply{InsertCnt: insertCnt}, nil
 }
 
 func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPatchRequest) (*pb.ImportXLSToPatchReply, error) {
@@ -114,6 +116,7 @@ func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPa
 	//批量插入数据
 	//遇到重复任务直接跳过
 	//若需要覆盖，则需要将insert加上ON DUPLICATE KEY UPDATE
+	var insertCnt int32 = 0
 	stmt, err := tx.Prepare("INSERT IGNORE INTO patch_table (patch_no, req_no, `describe`,client_name, deadline, reason, sponsor) VALUES (?, ?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		tx.Rollback()
@@ -128,6 +131,7 @@ func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPa
 			tx.Rollback()
 			return nil, err
 		}
+		insertCnt++
 	}
 
 	// 提交事务
@@ -135,7 +139,7 @@ func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPa
 	if err != nil {
 		log.Fatalf("failed to commit transaction: %v", err)
 	}
-	return &pb.ImportXLSToPatchReply{}, nil
+	return &pb.ImportXLSToPatchReply{InsertCnt: insertCnt}, nil
 }
 
 // 修改补丁时间，其下的修改单日期也一同修改

@@ -3,7 +3,6 @@ package main
 import (
 	"OrderManager/pb"
 	"database/sql"
-	"github.com/extrame/xls"
 	_ "github.com/go-sql-driver/mysql"
 	"google.golang.org/grpc"
 	"log"
@@ -54,13 +53,13 @@ func main() {
 type task struct {
 	comment            string
 	taskId             string
-	emergencyLevel     int
+	emergencyLevel     int32
 	deadline           string
 	principal          string
 	reqNo              string
-	estimatedWorkHours float64
+	estimatedWorkHours float32
 	state              string
-	typeId             int
+	typeId             int32
 }
 
 type patch struct {
@@ -71,87 +70,4 @@ type patch struct {
 	deadline   string
 	reason     string
 	sponsor    string
-}
-
-// 规范化导出文件的导入
-// 修改单信息： task_id,  principal,s tate,   升级说明： task_id, req_no,comment
-// TODO:front
-func importXLSForTaskList(file string) {
-	// 打开.xls文件
-	workbook, err := xls.Open("./规范化导出文件.xls", "utf-8")
-	if err != nil {
-		log.Fatalf("无法打开文件: %v", err)
-	}
-
-	allInsert := make(map[string]*task)
-
-	// 读取“修改单信息”工作表中的数据
-	sheet := workbook.GetSheet(2)
-	if sheet == nil {
-		log.Fatalf("没有找到工作表：修改单信息")
-	}
-
-	// 读取B,C,D列的数据
-	for i := 2; i <= int(sheet.MaxRow); i++ {
-		row := sheet.Row(i)
-		colTaskID := row.Col(1)
-		colState := row.Col(2)
-		colPrincipal := row.Col(3)
-
-		allInsert[colTaskID] = &task{taskId: colTaskID, state: colState, principal: colPrincipal}
-	}
-
-	sheet = workbook.GetSheet(3)
-	if sheet == nil {
-		log.Fatalf("没有找到工作表：升级说明")
-	}
-
-	// 读取C,D,I列的数据
-	for i := 2; i <= int(sheet.MaxRow); i++ {
-		row := sheet.Row(i)
-		colTaskID2 := row.Col(2)
-		colComment := row.Col(3)
-		colReqNo := row.Col(8)
-
-		if task, ok := allInsert[colTaskID2]; ok {
-			task.comment = colComment
-			task.reqNo = colReqNo
-		}
-	}
-
-	tasks := make([]task, 0)
-	for _, task := range allInsert {
-		tasks = append(tasks, *task)
-	}
-
-	//TODO:调用rpc
-
-}
-
-// TODO:front
-func importXLSForPatchTable(file string) {
-	workbook, err := xls.Open("./补丁导出_2024-07-25 13-56-06.xls", "utf-8")
-	if err != nil {
-		log.Fatalf("无法打开文件: %v", err)
-	}
-
-	sheet := workbook.GetSheet(0)
-	if sheet == nil {
-		log.Fatalf("没有找到工作表：修改单信息")
-	}
-	patchs := make([]patch, 0)
-	for i := 2; i <= int(sheet.MaxRow); i++ {
-		row := sheet.Row(i)
-		//t, err := time.Parse("20060102", row.Col(14))
-		//if err != nil {
-		//	log.Println("err to parse time", err)
-		//}
-
-		patchs = append(patchs, patch{reqNo: row.Col(0), patchNo: row.Col(1),
-			describe: row.Col(2), clientName: row.Col(3), reason: row.Col(12),
-			deadline: row.Col(14), sponsor: row.Col(19)})
-	}
-
-	//TODO:调用rpc
-
 }

@@ -66,7 +66,9 @@ message ImportToTaskListRequest {
   repeated task tasks = 1;
 }
 
-message ImportToTaskListReply {}
+message ImportToTaskListReply {
+  int32 insertCnt = 1;
+}
 
 
 message patch {
@@ -83,7 +85,9 @@ message ImportXLSToPatchRequest {
     repeated patch patchs = 1;
 }
 
-message ImportXLSToPatchReply {}
+message ImportXLSToPatchReply {
+  int32 insertCnt = 1;
+}
 
 message GetPatchsAllRequest {}
 
