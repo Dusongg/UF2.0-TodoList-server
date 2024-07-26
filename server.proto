@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+option go_package = "../pb";
+
+// 定义服务
+service Service {
+  rpc Login (LoginRequest) returns (LoginReply);
+  rpc GetTaskListAll (GetTaskListAllRequest) returns (GetTaskListAllReply);
+  rpc GetTaskListOne (GetTaskListOneRequest) returns (GetTaskListOneReply);
+
+  rpc ImportToTaskListTable (ImportToTaskListRequest) returns (ImportToTaskListReply);
+  rpc ImportXLSToPatchTable (ImportXLSToPatchRequest) returns (ImportXLSToPatchReply);
+
+}
+
+message LoginRequest {
+  string name = 1;
+  string password = 2;
+}
+
+message LoginReply {
+  bool ok = 1;
+}
+
+message GetTaskListAllRequest {}
+
+message task {
+  string comment = 1;
+  string taskId = 2;
+  int32 emergencyLevel = 3;
+  string deadline = 4;
+  string principal = 5;
+  string reqNo = 6;
+  float estimatedWorkHours = 7;
+  string state = 8;
+  int32 typeId = 9;
+
+}
+
+message GetTaskListAllReply {
+  repeated task tasks = 1;
+}
+
+
+message GetTaskListOneRequest {
+  string name = 1;
+}
+
+message GetTaskListOneReply {
+  repeated task tasks = 1;
+}
+
+
+message ImportToTaskListRequest {
+  repeated task tasks = 1;
+}
+
+message ImportToTaskListReply {}
+
+
+message patch {
+  string patchNo = 1;
+  string reqNo = 2;
+  string describe = 3;
+  string clientName = 4;
+  string deadline = 5;
+  string reason = 6;
+  string sponsor = 7;
+}
+
+message ImportXLSToPatchRequest {
+    repeated patch patchs = 1;
+}
+
+message ImportXLSToPatchReply {}
