@@ -42,7 +42,7 @@ message task {
   string deadline = 4;
   string principal = 5;
   string reqNo = 6;
-  float estimatedWorkHours = 7;
+  int64 estimatedWorkHours = 7;
   string state = 8;
   int32 typeId = 9;
 
@@ -112,9 +112,10 @@ message DelTaskRequest {
 message DelTaskReply {}
 
 message ModTaskRequest {
-  string field = 1;
-  string fieldValue = 2;
-  string taskNo = 3;
+  task t = 1;
 }
 
-message ModTaskReply {}
+message ModTaskReply {
+  bool succeed = 1;
+}
+

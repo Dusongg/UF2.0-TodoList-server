@@ -200,9 +200,10 @@ func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTas
 	return &pb.DelTaskReply{}, nil
 }
 func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTaskReply, error) {
-	_, err := db.Exec("update tasklist_table set ? = ? where task_id = ?", in.Field, in.FieldValue, in.TaskNo)
+	_, err := db.Exec("update tasklist_table set comment = ?, emergency_level = ?, deadline = ?, principal = ?, estimated_work_hours = ?, state = ?, type = ? where task_id = ?",
+		in.T.Comment, in.T.EmergencyLevel, in.T.Deadline, in.T.Principal, in.T.EstimatedWorkHours, in.T.State, in.T.TypeId, in.T.TaskId)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.ModTaskReply{}, nil
+	return &pb.ModTaskReply{Succeed: true}, nil
 }
