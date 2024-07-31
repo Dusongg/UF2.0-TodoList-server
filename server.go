@@ -3,6 +3,7 @@ package main
 import (
 	"OrderManager/pb"
 	"context"
+	"errors"
 	"log"
 )
 
@@ -205,5 +206,22 @@ func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTas
 	if err != nil {
 		return nil, err
 	}
-	return &pb.ModTaskReply{Succeed: true}, nil
+	return &pb.ModTaskReply{}, nil
+}
+
+func (s *server) AddTask(ctx context.Context, in *pb.AddTaskRequest) (*pb.AddTaskReply, error) {
+	res, err := db.Query("select * from tasklist_table where task_id = ?", in.T.TaskId)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Close()
+	if res.Next() {
+		return nil, errors.New("task already exists")
+	}
+	_, err = db.Exec("insert into tasklist_table values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		in.T.Comment, in.T.TaskId, in.T.EmergencyLevel, in.T.Deadline, in.T.Principal, in.T.ReqNo, in.T.EstimatedWorkHours, in.T.State, in.T.TypeId)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.AddTaskReply{}, nil
 }

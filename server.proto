@@ -2,6 +2,8 @@ syntax = "proto3";
 
 option go_package = "../pb";
 
+//protoc --go_out=./pb --go-grpc_out=./pb server.proto
+
 // 定义服务
 service Service {
   rpc Login (LoginRequest) returns (LoginReply);
@@ -10,9 +12,10 @@ service Service {
   rpc GetTaskListAll (GetTaskListAllRequest) returns (GetTaskListAllReply);
   rpc GetTaskListOne (GetTaskListOneRequest) returns (GetTaskListOneReply);
   rpc ImportToTaskListTable (ImportToTaskListRequest) returns (ImportToTaskListReply);
-//  rpc AddTask (AddTaskRequest) returns (AddTaskReply);
+  //CURD
   rpc DelTask (DelTaskRequest) returns (DelTaskReply);
   rpc ModTask (ModTaskRequest) returns (ModTaskReply);
+  rpc AddTask (AddTaskRequest) returns (AddTaskReply);
 
 
   //补丁
@@ -116,6 +119,12 @@ message ModTaskRequest {
 }
 
 message ModTaskReply {
-  bool succeed = 1;
+}
+
+message AddTaskRequest {
+  task t = 1;
+}
+
+message AddTaskReply {
 }
 
