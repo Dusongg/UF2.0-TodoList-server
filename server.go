@@ -1,9 +1,11 @@
 package main
 
 import (
+	"OrderManager/common"
 	"OrderManager/pb"
 	"context"
 	"errors"
+	"fmt"
 	"log"
 )
 
@@ -29,44 +31,25 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginReply
 }
 
 func (s *server) GetTaskListAll(ctx context.Context, in *pb.GetTaskListAllRequest) (*pb.GetTaskListAllReply, error) {
-	tasks := &pb.GetTaskListAllReply{}
 	rows, err := db.Query("select * from tasklist_table")
 	if err != nil {
-		log.Fatal(err)
-		return tasks, err
+		return nil, err
 	}
 	defer rows.Close()
-	for rows.Next() {
-		task := &pb.Task{}
-		err := rows.Scan(&task.Comment, &task.TaskId, &task.EmergencyLevel, &task.Deadline,
-			&task.Principal, &task.ReqNo, &task.EstimatedWorkHours, &task.State, &task.TypeId)
-		if err != nil {
-			return tasks, err
-		}
-		tasks.Tasks = append(tasks.Tasks, task)
-	}
-	return tasks, nil
+	reply := &pb.GetTaskListAllReply{}
+	reply.Tasks, err = common.Process(rows)
+	return reply, err
 }
-
 func (s *server) GetTaskListOne(ctx context.Context, in *pb.GetTaskListOneRequest) (*pb.GetTaskListOneReply, error) {
-	tasks := &pb.GetTaskListOneReply{}
 	rows, err := db.Query("select * from tasklist_table where principal = ?", in.Name)
 	if err != nil {
-		return tasks, err
+		return nil, err
 	}
 	defer rows.Close()
-	for rows.Next() {
-		task := &pb.Task{}
-		err := rows.Scan(&task.Comment, &task.TaskId, &task.EmergencyLevel, &task.Deadline,
-			&task.Principal, &task.ReqNo, &task.EstimatedWorkHours, &task.State, &task.TypeId)
-		if err != nil {
-			return tasks, err
-		}
-		tasks.Tasks = append(tasks.Tasks, task)
-	}
-	return tasks, nil
+	reply := &pb.GetTaskListOneReply{}
+	reply.Tasks, err = common.Process(rows)
+	return reply, err
 }
-
 func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskListRequest) (*pb.ImportToTaskListReply, error) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -100,6 +83,58 @@ func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskL
 		log.Fatalf("failed to commit transaction: %v", err)
 	}
 	return &pb.ImportToTaskListReply{InsertCnt: insertCnt}, nil
+}
+func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTaskReply, error) {
+	_, err := db.Exec("delete from tasklist_table where task_id = ?", in.TaskNo)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.DelTaskReply{}, nil
+}
+func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTaskReply, error) {
+	_, err := db.Exec("update tasklist_table set comment = ?, emergency_level = ?, deadline = ?, principal = ?, estimated_work_hours = ?, state = ?, type = ? where task_id = ?",
+		in.T.Comment, in.T.EmergencyLevel, in.T.Deadline, in.T.Principal, in.T.EstimatedWorkHours, in.T.State, in.T.TypeId, in.T.TaskId)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.ModTaskReply{}, nil
+}
+func (s *server) AddTask(ctx context.Context, in *pb.AddTaskRequest) (*pb.AddTaskReply, error) {
+	res, err := db.Query("select * from tasklist_table where task_id = ?", in.T.TaskId)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Close()
+	if res.Next() {
+		return nil, errors.New("task already exists")
+	}
+	_, err = db.Exec("insert into tasklist_table values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		in.T.Comment, in.T.TaskId, in.T.EmergencyLevel, in.T.Deadline, in.T.Principal, in.T.ReqNo, in.T.EstimatedWorkHours, in.T.State, in.T.TypeId)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.AddTaskReply{}, nil
+}
+func (s *server) QueryTaskWithSQL(ctx context.Context, in *pb.QueryTaskWithSQLRequest) (*pb.QueryTaskWithSQLReply, error) {
+	rows, err := db.Query(in.Sql)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	reply := &pb.QueryTaskWithSQLReply{}
+	reply.Tasks, err = common.Process(rows)
+	return reply, err
+}
+func (s *server) QueryTaskWithField(ctx context.Context, in *pb.QueryTaskWithFieldRequest) (*pb.QueryTaskWithFieldReply, error) {
+	sql := fmt.Sprintf("select * from tasklist_table where %s = ?", in.Field)
+	rows, err := db.Query(sql, in.FieldValue)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	reply := &pb.QueryTaskWithFieldReply{}
+	reply.Tasks, err = common.Process(rows)
+	return reply, err
 }
 
 func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPatchRequest) (*pb.ImportXLSToPatchReply, error) {
@@ -168,7 +203,6 @@ func (s *server) ModDeadLineInPatchs(ctx context.Context, in *pb.MDLIPRequest) (
 	}
 	return &pb.MDLIPReply{}, nil
 }
-
 func (s *server) DelPatch(ctx context.Context, in *pb.DelPatchRequest) (*pb.DelPatchReply, error) {
 	patchNo := in.PatchNo
 
@@ -192,36 +226,59 @@ func (s *server) DelPatch(ctx context.Context, in *pb.DelPatchRequest) (*pb.DelP
 	}
 	return &pb.DelPatchReply{}, nil
 }
-
-func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTaskReply, error) {
-	_, err := db.Exec("delete from tasklist_table where task_id = ?", in.TaskNo)
+func (s *server) GetPatchsAll(ctx context.Context, in *pb.GetPatchsAllRequest) (*pb.GetPatchsAllReply, error) {
+	rows, err := db.Query("select * from patch_table")
 	if err != nil {
 		return nil, err
 	}
-	return &pb.DelTaskReply{}, nil
-}
-func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTaskReply, error) {
-	_, err := db.Exec("update tasklist_table set comment = ?, emergency_level = ?, deadline = ?, principal = ?, estimated_work_hours = ?, state = ?, type = ? where task_id = ?",
-		in.T.Comment, in.T.EmergencyLevel, in.T.Deadline, in.T.Principal, in.T.EstimatedWorkHours, in.T.State, in.T.TypeId, in.T.TaskId)
-	if err != nil {
-		return nil, err
+	defer rows.Close()
+	reply := &pb.GetPatchsAllReply{}
+	for rows.Next() {
+		task := &pb.Patch{}
+		err := rows.Scan(&task.PatchNo, &task.ReqNo, &task.Describe, &task.ClientName,
+			&task.Deadline, &task.Reason, &task.Sponsor)
+		if err != nil {
+			return reply, err
+		}
+		reply.Patchs = append(reply.Patchs, task)
 	}
-	return &pb.ModTaskReply{}, nil
+	return reply, err
 }
-
-func (s *server) AddTask(ctx context.Context, in *pb.AddTaskRequest) (*pb.AddTaskReply, error) {
-	res, err := db.Query("select * from tasklist_table where task_id = ?", in.T.TaskId)
+func (s *server) GetOnePatchs(ctx context.Context, in *pb.GetOnePatchsRequest) (*pb.GetOnePatchsReply, error) {
+	res, err := db.Query("select * from patch_table where patch_no = ?", in.PatchNo)
 	if err != nil {
 		return nil, err
 	}
 	defer res.Close()
-	if res.Next() {
-		return nil, errors.New("task already exists")
+	patch := &pb.Patch{}
+	for res.Next() {
+		err := res.Scan(&patch.PatchNo, &patch.ReqNo, &patch.Describe, &patch.ClientName,
+			&patch.Deadline, &patch.Reason, &patch.Sponsor)
+		if err != nil {
+			return nil, err
+		}
 	}
-	_, err = db.Exec("insert into tasklist_table values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		in.T.Comment, in.T.TaskId, in.T.EmergencyLevel, in.T.Deadline, in.T.Principal, in.T.ReqNo, in.T.EstimatedWorkHours, in.T.State, in.T.TypeId)
+	return &pb.GetOnePatchsReply{P: patch}, nil
+}
+func (s *server) ModPatch(ctx context.Context, in *pb.ModPatchRequest) (*pb.ModPatchReply, error) {
+	_, err := db.Exec("update patch_table set `describe` = ? , client_name = ?, reason = ?, sponsor = ?", in.P.Describe, in.P.ClientName, in.P.Reason, in.P.Sponsor)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.AddTaskReply{}, nil
+	rows, err := db.Query("select deadline from patch_table where patch_no = ?", in.P.PatchNo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var preDeadline string
+		rows.Scan(&preDeadline)
+		if preDeadline != in.P.Deadline {
+			_, err := s.ModDeadLineInPatchs(context.Background(), &pb.MDLIPRequest{PatchNo: in.P.PatchNo, NewDeadline: in.P.Deadline})
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return &pb.ModPatchReply{}, nil
 }

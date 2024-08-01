@@ -16,14 +16,18 @@ service Service {
   rpc DelTask (DelTaskRequest) returns (DelTaskReply);
   rpc ModTask (ModTaskRequest) returns (ModTaskReply);
   rpc AddTask (AddTaskRequest) returns (AddTaskReply);
+  rpc QueryTaskWithSQL (QueryTaskWithSQLRequest) returns (QueryTaskWithSQLReply);
+  rpc QueryTaskWithField (QueryTaskWithFieldRequest) returns (QueryTaskWithFieldReply);
+
 
 
   //补丁
   rpc GetPatchsAll (GetPatchsAllRequest) returns (GetPatchsAllReply);
+  rpc GetOnePatchs (GetOnePatchsRequest) returns (GetOnePatchsReply);
   rpc ModDeadLineInPatchs (MDLIPRequest) returns (MDLIPReply);
   rpc DelPatch (DelPatchRequest) returns (DelPatchReply);
   rpc ImportXLSToPatchTable (ImportXLSToPatchRequest) returns (ImportXLSToPatchReply);
-
+  rpc ModPatch (ModPatchRequest) returns (ModPatchReply);
 
 }
 
@@ -128,3 +132,32 @@ message AddTaskRequest {
 message AddTaskReply {
 }
 
+message QueryTaskWithSQLRequest {
+  string sql = 1;
+}
+message QueryTaskWithSQLReply {
+  repeated task tasks = 1;
+}
+
+message QueryTaskWithFieldRequest {
+  string field  = 1;
+  string fieldValue = 2;
+}
+
+message QueryTaskWithFieldReply {
+  repeated task tasks = 1;
+}
+
+message GetOnePatchsRequest {
+  string patchNo = 1;
+}
+message GetOnePatchsReply {
+  patch p = 1;
+}
+
+message ModPatchRequest {
+  patch p = 1;
+}
+message ModPatchReply {
+
+}
