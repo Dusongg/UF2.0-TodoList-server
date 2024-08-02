@@ -19,15 +19,28 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginReply
 	row, _ := db.Query("select * from user_table where name = ?", in.Name)
 	defer row.Close()
 	if !row.Next() {
-		return &pb.LoginReply{Ok: false}, nil
+		return &pb.LoginReply{}, errors.New("this user does not exist")
 	}
 	row2, _ := db.Query("select * from user_table where name = ? and password = ?", in.Name, in.Password)
 	defer row2.Close()
 	if !row2.Next() {
-		return &pb.LoginReply{Ok: false}, nil
+		return &pb.LoginReply{}, errors.New("wrong password")
 	} else {
-		return &pb.LoginReply{Ok: true}, nil
+		return &pb.LoginReply{}, nil
 	}
+}
+
+func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.RegisterReply, error) {
+	row, _ := db.Query("select * from user_table where name = ?", in.User.Name)
+	defer row.Close()
+	if row.Next() {
+		return &pb.RegisterReply{}, errors.New("Registration Failed Username already exists")
+	}
+	_, err := db.Exec("insert into user_table(name, job_no, password, email) values (?, ?, ?, ?)", in.User.Name, in.User.JobNum, in.User.Password, in.User.Email)
+	if err != nil {
+		return &pb.RegisterReply{}, err
+	}
+	return &pb.RegisterReply{}, nil
 }
 
 func (s *server) GetTaskListAll(ctx context.Context, in *pb.GetTaskListAllRequest) (*pb.GetTaskListAllReply, error) {
@@ -138,12 +151,6 @@ func (s *server) QueryTaskWithField(ctx context.Context, in *pb.QueryTaskWithFie
 }
 
 func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPatchRequest) (*pb.ImportXLSToPatchReply, error) {
-	//for _, t := range patchs {
-	//	fmt.Printf("reqNo:%s\n patchNo: %s\n describe: %s\n clientName: %s\n reason: %s\n deadline: %s\n sponser: %s\n",
-	//		t.reqNo, t.patchNo, t.describe, t.clientName, t.reason, t.deadline, t.sponsor)
-	//
-	//}
-
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatalf("failed to begin transaction: %v", err)
@@ -160,10 +167,11 @@ func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPa
 	}
 	defer stmt.Close()
 
-	for _, item := range in.Patchs {
+	for i, item := range in.Patchs {
 		_, err := stmt.Exec(item.PatchNo, item.ReqNo, item.Describe, item.ClientName,
 			item.Deadline, item.Reason, item.Sponsor)
 		if err != nil {
+			fmt.Printf("Error inserting row %d: %v\n", i, err) // 打印错误行号和错误信息
 			tx.Rollback()
 			return nil, err
 		}

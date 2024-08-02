@@ -7,6 +7,7 @@ option go_package = "../pb";
 // 定义服务
 service Service {
   rpc Login (LoginRequest) returns (LoginReply);
+  rpc Register (RegisterRequest) returns (RegisterReply);
 
   //修改单/任务
   rpc GetTaskListAll (GetTaskListAllRequest) returns (GetTaskListAllReply);
@@ -37,7 +38,6 @@ message LoginRequest {
 }
 
 message LoginReply {
-  bool ok = 1;
 }
 
 message GetTaskListAllRequest {}
@@ -160,4 +160,18 @@ message ModPatchRequest {
 }
 message ModPatchReply {
 
+}
+
+message User {
+  string name = 1;
+  string JobNum = 2;
+  string password = 3;
+  string email = 4;
+}
+
+message RegisterRequest {
+  User user = 1;
+}
+
+message RegisterReply {
 }
