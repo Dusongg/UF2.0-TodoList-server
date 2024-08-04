@@ -1,6 +1,7 @@
 package main
 
 import (
+	"OrderManager/config"
 	"OrderManager/pb"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
@@ -21,12 +22,11 @@ const (
 )
 
 var (
-	dsn = "root:123123@tcp(127.0.0.1:3306)/OrderManager"
-	db  *sql.DB
+	db *sql.DB
 )
 
 func init() {
-	db, _ = sql.Open("mysql", dsn)
+	db, _ = sql.Open("mysql", config.DSN)
 
 	db.SetMaxOpenConns(25)                 // 最大打开连接数
 	db.SetMaxIdleConns(25)                 // 最大闲置连接数
@@ -37,7 +37,7 @@ func init() {
 }
 
 func main() {
-
+	go emailClock()
 	grpcServer := grpc.NewServer()
 	pb.RegisterServiceServer(grpcServer, Server)
 	listener, err := net.Listen("tcp", ":8001")
