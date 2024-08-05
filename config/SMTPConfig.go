@@ -6,8 +6,12 @@ const (
 	SmtpHost = "smtp.gmail.com"
 	SmtpPort = "587"
 	Sender   = "dusong700@gmail.com"
-	Password = "dusong@041008"
+	Password = "cfvp lkgi igov frgh"
+	Addr     = SmtpHost + ":" + SmtpPort
 )
 
-var Auth = smtp.PlainAuth("", Sender, Password, SmtpHost)
-var Addr = SmtpHost + ":" + SmtpPort
+var Auth smtp.Auth
+
+func init() {
+	Auth = smtp.PlainAuth("", Sender, Password, SmtpHost)
+}

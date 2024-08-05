@@ -5,8 +5,22 @@ import (
 	"fmt"
 	"log"
 	"net/smtp"
+	"sync"
 	"time"
 )
+
+func testSendEmail() {
+	//email := "dusong700@gmail.com"
+	email := "728869268@qq.com"
+	msg := []byte("测试邮件")
+
+	err := smtp.SendMail(config.Addr, config.Auth, config.Sender, []string{email}, msg)
+	if err != nil {
+		log.Println("发送失败：", err)
+	} else {
+		log.Println("发送成功")
+	}
+}
 
 func emailClock() {
 	for {
@@ -42,14 +56,21 @@ func queryAndSendEmail() {
 		return
 	}
 	defer rows.Close()
+	var wg sync.WaitGroup
 	for rows.Next() {
+		wg.Add(1)
 		var name, email string
 		err := rows.Scan(&name, &email)
 		if err != nil {
 			log.Println(err)
 		}
-		sendEmail(name, email)
+
+		go func() {
+			wg.Done()
+			sendEmail(name, email)
+		}()
 	}
+	wg.Wait()
 
 }
 

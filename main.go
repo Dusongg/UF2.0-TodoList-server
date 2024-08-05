@@ -3,12 +3,15 @@ package main
 import (
 	"OrderManager/config"
 	"OrderManager/pb"
+	"context"
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
-	"google.golang.org/grpc"
 	"log"
 	"net"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/peer"
 )
 
 const (
@@ -36,13 +39,30 @@ func init() {
 	}
 }
 
+func unaryInterceptor(
+	ctx context.Context,
+	req interface{},
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (interface{}, error) {
+	// Retrieve client information
+	p, ok := peer.FromContext(ctx)
+	if ok {
+		log.Printf("Received request from: %s", p.Addr)
+	}
+	return handler(ctx, req)
+}
+
 func main() {
 	go emailClock()
-	grpcServer := grpc.NewServer()
+	//go testSendEmail()
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(unaryInterceptor))
 	pb.RegisterServiceServer(grpcServer, Server)
 	listener, err := net.Listen("tcp", ":8001")
 	if err != nil {
 		log.Fatal("服务监听失败", err)
+	} else {
+		log.Println("正在监听端口：", listener.Addr())
 	}
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatal(err)
