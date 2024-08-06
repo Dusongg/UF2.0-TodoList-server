@@ -2,16 +2,15 @@ package main
 
 import (
 	"OrderManager/config"
+	"OrderManager/models"
 	"OrderManager/pb"
 	"context"
-	"database/sql"
-	"log"
-	"net"
-	"time"
-
-	_ "github.com/go-sql-driver/mysql"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"log"
+	"net"
 )
 
 const (
@@ -24,18 +23,22 @@ const (
 	EMERGENCY_LEVEL_2 = 2
 )
 
-var (
-	db *sql.DB
-)
+var db *gorm.DB
+
+type TaskInfo = models.TaskInfo
+
+type PatchsInfo = models.PatchsInfo
+type UserInfo = models.UserInfo
 
 func init() {
-	db, _ = sql.Open("mysql", config.DSN)
-
-	db.SetMaxOpenConns(25)                 // 最大打开连接数
-	db.SetMaxIdleConns(25)                 // 最大闲置连接数
-	db.SetConnMaxLifetime(5 * time.Minute) // 连接的最大生命周期
-	if err := db.Ping(); err != nil {
-		log.Fatalf("Error connecting to the database: %v", err)
+	tmpDb, err := gorm.Open(mysql.Open(config.GORM_DNS), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	db = tmpDb
+	err = db.AutoMigrate(&TaskInfo{}, &PatchsInfo{}, &UserInfo{})
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -48,7 +51,7 @@ func unaryInterceptor(
 	// Retrieve client information
 	p, ok := peer.FromContext(ctx)
 	if ok {
-		log.Printf("Received request from: %s", p.Addr)
+		log.Printf("Received request from:%s", p.String())
 	}
 	return handler(ctx, req)
 }
@@ -67,27 +70,4 @@ func main() {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
-}
-
-type task struct {
-	comment            string
-	taskId             string
-	emergencyLevel     int32
-	deadline           string
-	principal          string
-	reqNo              string
-	estimatedWorkHours float32
-	state              string
-	typeId             int32
-}
-
-type patch struct {
-	patchNo    string
-	reqNo      string
-	describe   string
-	clientName string
-	deadline   string
-	reason     string
-	sponsor    string
 }

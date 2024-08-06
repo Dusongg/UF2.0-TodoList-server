@@ -50,21 +50,20 @@ func emailClock() {
 }
 
 func queryAndSendEmail() {
-	rows, err := db.Query("select name, email from user_table")
-	if err != nil {
+	type nameAndEmail struct {
+		Name  string
+		Email string
+	}
+	var ne []nameAndEmail
+	if err := db.Table("user_table").Select("name", "email").Find(&ne).Error; err != nil {
 		log.Println(err)
 		return
 	}
-	defer rows.Close()
-	var wg sync.WaitGroup
-	for rows.Next() {
-		wg.Add(1)
-		var name, email string
-		err := rows.Scan(&name, &email)
-		if err != nil {
-			log.Println(err)
-		}
 
+	var wg sync.WaitGroup
+	for _, item := range ne {
+		wg.Add(1)
+		name, email := item.Name, item.Email
 		go func() {
 			wg.Done()
 			sendEmail(name, email)
@@ -81,7 +80,7 @@ func sendEmail(name string, email string) {
 	}
 	msg := make([]byte, 0)
 	for _, content := range contents {
-		row := fmt.Sprintf("task_id:%s req_no:%s deadline:%s comment:%s taskTime:%s\n", content.taskId, content.reqNo, content.deadline, content.comment, content.taskTime)
+		row := fmt.Sprintf("task_id:%s req_no:%s deadline:%s comment:%s taskTime:%s\n", content.taskId, content.reqNo, content.deadline, content.comment, content.estimatedWorkHour)
 		msg = append(msg, []byte(row)...)
 	}
 	err = smtp.SendMail(config.Addr, config.Auth, config.Sender, []string{email}, msg)
@@ -91,27 +90,19 @@ func sendEmail(name string, email string) {
 }
 
 type sendContent struct {
-	taskId   string
-	reqNo    string
-	deadline string
-	taskTime float64
-	comment  string
+	taskId            string
+	reqNo             string
+	deadline          time.Time
+	comment           string
+	estimatedWorkHour float64
 }
 
-func querySendContent(name string) ([]*sendContent, error) {
-	rows, err := db.Query("select task_id, req_no, deadline, comment, estimated_work_hours from tasklist_table where  principal = ?", name)
-	if err != nil {
+func querySendContent(name string) ([]sendContent, error) {
+
+	var ct []sendContent
+	if err := db.Table("tasklist_table").Select("task_id", "req_no", "deadline", "comment", "estimated_work_hours").Where("principal = ?", name).Find(&ct).Error; err != nil {
+		log.Println(err)
 		return nil, err
 	}
-	defer rows.Close()
-	contents := make([]*sendContent, 0)
-	for rows.Next() {
-		content := &sendContent{}
-		err = rows.Scan(&content.taskId, &content.reqNo, &content.deadline, &content.comment, &content.taskTime)
-		if err != nil {
-			return nil, err
-		}
-		contents = append(contents, content)
-	}
-	return contents, nil
+	return ct, nil
 }

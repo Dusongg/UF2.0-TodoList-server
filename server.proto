@@ -93,7 +93,6 @@ message ImportXLSToPatchRequest {
 }
 
 message ImportXLSToPatchReply {
-  int32 insertCnt = 1;
 }
 
 message GetPatchsAllRequest {}
@@ -164,7 +163,7 @@ message ModPatchReply {
 
 message User {
   string name = 1;
-  string JobNum = 2;
+  int64 JobNum = 2;
   string password = 3;
   string email = 4;
 }
