@@ -1,12 +1,14 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type TaskInfo struct {
 	TaskID             string    `gorm:"column:task_id;type:varchar(25);primaryKey;not null;comment:任务单号"`
 	Comment            string    `gorm:"column:comment;type:varchar(100);comment:任务描述"`
 	EmergencyLevel     int       `gorm:"column:emergency_level;default:0;comment:紧急程度"`
-	Deadline           time.Time `gorm:"column:deadline;type:date;comment:截止日期"`
+	Deadline           time.Time `gorm:"column:deadline;type:date;default:(date_format((now() + interval 3 day),_utf8mb4'%Y-%m-%d'));comment:截止日期"`
 	Principal          string    `gorm:"column:principal;type:varchar(20);not null;comment:负责人"`
 	ReqNo              string    `gorm:"column:req_no;type:varchar(20);not null;comment:需求号;index:tasklist_req_no_index"`
 	EstimatedWorkHours float64   `gorm:"column:estimated_work_hours;default:72;comment:预计工时"`

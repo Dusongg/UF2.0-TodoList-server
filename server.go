@@ -111,7 +111,7 @@ func (s *server) GetTaskListOne(ctx context.Context, in *pb.GetTaskListOneReques
 }
 func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskListRequest) (*pb.ImportToTaskListReply, error) {
 	tx := db.Begin()
-	if err := tx.Create(common.AllPbTaskToTaskInfo(in.Tasks)).Error; err != nil {
+	if err := tx.Save(common.AllPbTaskToTaskInfo(in.Tasks)).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskL
 	////遇到重复任务直接跳过
 	////若需要覆盖，则需要将insert加上ON DUPLICATE KEY UPDATE
 	//var insertCnt int32 = 0
-	//stmt, err := tx.Prepare("INSERT IGNORE INTO tasklist_table (task_id, req_no, comment, principal, state) VALUES (?, ?, ?, ?, ?)")
+	//stmt, err := tx.Prepare("INSERT   INTO tasklist_table (task_id, req_no, comment, principal, state) VALUES (?, ?, ?, ?, ?)")
 	//if err != nil {
 	//	tx.Rollback()
 	//	return nil, err
@@ -236,7 +236,7 @@ func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPa
 		return nil, tx.Error
 	}
 
-	if err := tx.Create(common.AllPbPatchsToPatchsInfo(in.Patchs)).Error; err != nil {
+	if err := tx.Save(common.AllPbPatchsToPatchsInfo(in.Patchs)).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
