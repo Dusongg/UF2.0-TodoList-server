@@ -11,7 +11,7 @@ type TaskInfo struct {
 	Deadline           time.Time `gorm:"column:deadline;type:date;default:(date_format((now() + interval 3 day),_utf8mb4'%Y-%m-%d'));comment:截止日期"`
 	Principal          string    `gorm:"column:principal;type:varchar(20);not null;comment:负责人"`
 	ReqNo              string    `gorm:"column:req_no;type:varchar(20);not null;comment:需求号;index:tasklist_req_no_index"`
-	EstimatedWorkHours float64   `gorm:"column:estimated_work_hours;default:72;comment:预计工时"`
+	EstimatedWorkHours float64   `gorm:"column:estimated_work_hours;default:16;comment:预计工时"`
 	State              string    `gorm:"column:state;type:varchar(20);default:带启动;comment:任务状态"`
 	Type               int       `gorm:"column:type;default:0;comment:任务类型"`
 }
