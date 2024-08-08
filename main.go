@@ -42,6 +42,7 @@ func init() {
 	}
 }
 
+// 获得客户端ip端口
 func unaryInterceptor(
 	ctx context.Context,
 	req interface{},
@@ -61,6 +62,11 @@ func main() {
 	//go testSendEmail()
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(unaryInterceptor))
 	pb.RegisterServiceServer(grpcServer, Server)
+
+	pb.RegisterNotificationServiceServer(grpcServer, NotificationServer)
+
+	go NotificationServer.publishUpdates() //启动 Redis 订阅者
+
 	listener, err := net.Listen("tcp", ":8001")
 	if err != nil {
 		log.Fatal("服务监听失败", err)

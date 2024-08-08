@@ -3,6 +3,34 @@ syntax = "proto3";
 option go_package = "../pb";
 
 //protoc --go_out=./pb --go-grpc_out=./pb server.proto
+package notification;
+// 定义订阅请求消息
+message SubscriptionRequest {
+  string client_id = 1; // 客户端标识符，用于区分不同客户端
+}
+
+// 定义通知消息
+message Notification {
+  string message = 1; // 通知内容
+}
+
+// 定义通知服务
+service NotificationService {
+  // 订阅更新，服务器端流式 RPC
+  rpc Subscribe (SubscriptionRequest) returns (stream Notification);
+}
+
+message PublishRequest {
+  string client_id = 1;
+  string message = 2;
+}
+
+message PublishResponse {
+  bool success = 1;
+}
+
+
+
 
 // 定义服务
 service Service {
@@ -71,6 +99,7 @@ message GetTaskListOneReply {
 
 message ImportToTaskListRequest {
   repeated task tasks = 1;
+  string user = 2;
 }
 
 message ImportToTaskListReply {
@@ -90,6 +119,7 @@ message patch {
 
 message ImportXLSToPatchRequest {
     repeated patch patchs = 1;
+    string user = 2;
 }
 
 message ImportXLSToPatchReply {
@@ -104,21 +134,26 @@ message GetPatchsAllReply {
 message MDLIPRequest {
   string patchNo = 1;
   string newDeadline = 2;
+  string user = 3;
 }
 message MDLIPReply {}
 
 message DelPatchRequest {
   string patchNo = 1;
+  string user = 2;
 }
 message  DelPatchReply {}
 
 message DelTaskRequest {
   string taskNo = 1;
+  string user = 2;
+  string principal = 3;
 }
 message DelTaskReply {}
 
 message ModTaskRequest {
   task t = 1;
+  string user = 2;
 }
 
 message ModTaskReply {
@@ -126,6 +161,7 @@ message ModTaskReply {
 
 message AddTaskRequest {
   task t = 1;
+  string user = 2;
 }
 
 message AddTaskReply {
@@ -156,6 +192,7 @@ message GetOnePatchsReply {
 
 message ModPatchRequest {
   patch p = 1;
+  string user = 2;
 }
 message ModPatchReply {
 

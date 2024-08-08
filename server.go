@@ -6,10 +6,96 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/go-redis/redis/v8"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"log"
+	"regexp"
+	"sync"
 	"time"
 )
+
+type notificationServer struct {
+	pb.UnimplementedNotificationServiceServer
+	clients map[string]pb.NotificationService_SubscribeServer
+	mu      sync.Mutex
+	rdb     *redis.Client
+	ctx     context.Context
+}
+
+func (s *notificationServer) updateDatabaseAndNotify(updateData string) {
+	err := s.rdb.Publish(context.Background(), "updates", updateData).Err()
+	if err != nil {
+		log.Printf("Error updating database: %v", err)
+	}
+}
+
+func (s *notificationServer) publishUpdates() {
+	pubsub := s.rdb.Subscribe(s.ctx, "updates")
+	ch := pubsub.Channel()
+
+	for msg := range ch {
+		s.mu.Lock()
+		defer s.mu.Unlock() // 确保每次调用后都解锁
+
+		for name, client := range s.clients {
+			re := regexp.MustCompile(`<([^>]*)>`)
+			matches := re.FindAllStringSubmatch(msg.Payload, -1)
+			if len(matches) != 2 {
+				continue
+			}
+			from := matches[0][1]
+			to := matches[1][1]
+			if from == name || (to != "ALL" && to != name) {
+				log.Printf("from:%s, to:%s, name: %s", from, to, name)
+				continue
+			}
+			if err := client.Send(&pb.Notification{Message: msg.Payload}); err != nil {
+				log.Printf("Failed to send notification: %v", err)
+			}
+		}
+	}
+}
+
+func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.NotificationService_SubscribeServer) error {
+	s.mu.Lock()
+	s.clients[req.ClientId] = stream
+	log.Println(s.clients)
+	s.mu.Unlock()
+
+	pubsub := s.rdb.Subscribe(s.ctx, "updates")
+	ch := pubsub.Channel()
+
+	for msg := range ch {
+		re := regexp.MustCompile(`<([^>]*)>`)
+		matches := re.FindAllStringSubmatch(msg.Payload, -1)
+		if len(matches) != 2 {
+			continue
+		}
+		from := matches[0][1]
+		to := matches[1][1]
+		if from == req.ClientId || (to != "ALL" && to != req.ClientId) {
+			log.Printf("from:%s, to:%s, name: %s", from, to, req.ClientId)
+			continue
+		}
+		if err := stream.Send(&pb.Notification{Message: msg.Payload}); err != nil {
+			return err
+		}
+	}
+
+	s.mu.Lock()
+	delete(s.clients, req.ClientId)
+	log.Println("Unsubscribed client:", req.ClientId)
+	s.mu.Unlock()
+
+	return nil
+}
+
+var NotificationServer = &notificationServer{
+	clients: make(map[string]pb.NotificationService_SubscribeServer),
+	rdb:     redis.NewClient(&redis.Options{Addr: "localhost:6379"}),
+	ctx:     context.Background(),
+}
 
 type server struct {
 	pb.UnimplementedServiceServer
@@ -19,17 +105,21 @@ var Server = &server{}
 
 func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginReply, error) {
 	var user UserInfo
-	res := db.Where("name = ?", in.Name).First(&user)
-	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+	res1 := db.Where("name = ?", in.Name).First(&user)
+	res2 := db.Where("job_no = ?", in.Name).First(&user)
+	if res1.Error != nil && res2.Error != nil {
+		if errors.Is(res1.Error, gorm.ErrRecordNotFound) || errors.Is(res2.Error, gorm.ErrRecordNotFound) {
 			return nil, errors.New("this user does not exist")
 		}
-		return nil, res.Error
+		return nil, res1.Error
 	}
-	if user.Password != in.Password {
+	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.Password))
+	if err != nil {
 		return nil, errors.New("wrong password")
+	} else {
+		return &pb.LoginReply{}, nil
 	}
-	return &pb.LoginReply{}, nil
+
 	//row, _ := db.Query("select * from user_table where name = ?", in.Name)
 	//defer row.Close()
 	//if !row.Next() {
@@ -50,10 +140,14 @@ func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.Regi
 	if res.RowsAffected > 0 {
 		return &pb.RegisterReply{}, errors.New("user already exists")
 	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(in.User.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return &pb.RegisterReply{}, err
+	}
 	userinfo := UserInfo{
 		Name:     in.User.Name,
 		JobNo:    int(in.User.JobNum),
-		Password: in.User.Password,
+		Password: string(hashedPassword),
 		Email:    in.User.Email,
 	}
 	if err := db.Create(&userinfo).Error; err != nil {
@@ -116,6 +210,8 @@ func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskL
 		return nil, err
 	}
 	tx.Commit()
+	msg := fmt.Sprintf("<%s> -> import tasks counts: %d -> <ALL>", in.User, len(in.Tasks))
+	NotificationServer.updateDatabaseAndNotify(msg)
 	return &pb.ImportToTaskListReply{}, nil
 	//tx, err := db.Begin()
 	//if err != nil {
@@ -152,8 +248,13 @@ func (s *server) ImportToTaskListTable(ctx context.Context, in *pb.ImportToTaskL
 }
 func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTaskReply, error) {
 	task := TaskInfo{}
-	db.Where("task_id = ?", in.TaskNo).Delete(&task)
-	return &pb.DelTaskReply{}, nil
+	if err := db.Where("task_id = ?", in.TaskNo).Delete(&task).Error; err != nil {
+		return nil, err
+	} else {
+		msg := fmt.Sprintf("<%s> -> delete task: %s -> <%s>", in.User, in.TaskNo, in.Principal)
+		NotificationServer.updateDatabaseAndNotify(msg)
+		return &pb.DelTaskReply{}, nil
+	}
 	//_, err := db.Exec("delete from tasklist_table where task_id = ?", in.TaskNo)
 	//if err != nil {
 	//	return nil, err
@@ -161,8 +262,14 @@ func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTas
 	//return &pb.DelTaskReply{}, nil
 }
 func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTaskReply, error) {
-	db.Save(common.OnePbTaskToTaskInfo(in.T))
-	return &pb.ModTaskReply{}, nil
+	if err := db.Save(common.OnePbTaskToTaskInfo(in.T)).Error; err != nil {
+		return nil, err
+	} else {
+		msg := fmt.Sprintf("<%s> -> modifiy task: %s -> <%s>", in.User, in.T.TaskId, in.T.Principal)
+		NotificationServer.updateDatabaseAndNotify(msg)
+		return &pb.ModTaskReply{}, nil
+
+	}
 	//_, err := db.Exec("update tasklist_table set comment = ?, emergency_level = ?, deadline = ?, principal = ?, estimated_work_hours = ?, state = ?, type = ? where task_id = ?",
 	//	in.T.Comment, in.T.EmergencyLevel, in.T.Deadline, in.T.Principal, in.T.EstimatedWorkHours, in.T.State, in.T.TypeId, in.T.TaskId)
 	//if err != nil {
@@ -172,15 +279,18 @@ func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTas
 }
 func (s *server) AddTask(ctx context.Context, in *pb.AddTaskRequest) (*pb.AddTaskReply, error) {
 	var task TaskInfo
-	if err := db.Where("task_id = ?", in.T.TaskId).First(&task).Error; err == nil {
+	if err := db.Where("task_id = ?", in.T.TaskId).First(&task).Error; err == nil { //有重复task_id
 		return nil, errors.New("task already exists")
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) { //查找出错，且不是没有找到的错误
 		return nil, err
 	}
 	if err := db.Create(common.OnePbTaskToTaskInfo(in.T)).Error; err != nil {
 		return nil, err
+	} else {
+		msg := fmt.Sprintf("<%s> -> add task: %s -> <%s>", in.User, in.T.TaskId, in.T.Principal)
+		NotificationServer.updateDatabaseAndNotify(msg)
+		return &pb.AddTaskReply{}, nil
 	}
-	return &pb.AddTaskReply{}, nil
 
 	//res, err := db.Query("select * from tasklist_table where task_id = ?", in.T.TaskId)
 	//if err != nil {
@@ -243,6 +353,8 @@ func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPa
 	if err := tx.Commit().Error; err != nil {
 		return nil, err
 	}
+	msg := fmt.Sprintf("<%s> -> import patchs counts: %d", in.User, len(in.Patchs))
+	NotificationServer.updateDatabaseAndNotify(msg)
 	return &pb.ImportXLSToPatchReply{}, nil
 
 	//tx, err := db.Begin()
@@ -311,6 +423,8 @@ func (s *server) ModDeadLineInPatchs(ctx context.Context, in *pb.MDLIPRequest) (
 		log.Fatalf("failed to commit transaction: %v", err)
 		return nil, err
 	}
+	msg := fmt.Sprintf("<%s> -> modifiy patchs's:%s deadline to %s -> <ALL>", in.User, in.PatchNo, in.NewDeadline)
+	NotificationServer.updateDatabaseAndNotify(msg)
 
 	return &pb.MDLIPReply{}, nil
 	//tx, err := db.Begin()
@@ -362,6 +476,8 @@ func (s *server) DelPatch(ctx context.Context, in *pb.DelPatchRequest) (*pb.DelP
 		return nil, err
 	}
 
+	msg := fmt.Sprintf("<%s> -> delete patchs:%s -> <ALL>", in.User, in.PatchNo)
+	NotificationServer.updateDatabaseAndNotify(msg)
 	return &pb.DelPatchReply{}, nil
 	//patchNo := in.PatchNo
 	//
@@ -442,8 +558,12 @@ func (s *server) ModPatch(ctx context.Context, in *pb.ModPatchRequest) (*pb.ModP
 	if deadline.Format("2006-01-02") != in.P.Deadline {
 		_, err := s.ModDeadLineInPatchs(context.Background(), &pb.MDLIPRequest{PatchNo: in.P.PatchNo, NewDeadline: in.P.Deadline})
 		return nil, err
+	} else {
+		msg := fmt.Sprintf("<%s> -> modifiy patchs:%s -> <ALL>", in.User, in.P.PatchNo)
+		NotificationServer.updateDatabaseAndNotify(msg)
+		return &pb.ModPatchReply{}, nil
 	}
-	return &pb.ModPatchReply{}, nil
+
 	//_, err := db.Exec("update patch_table set `describe` = ? , client_name = ?, reason = ?, sponsor = ?", in.P.Describe, in.P.ClientName, in.P.Reason, in.P.Sponsor)
 	//if err != nil {
 	//	return nil, err

@@ -78,6 +78,9 @@ func sendEmail(name string, email string) {
 	if err != nil {
 		log.Println(err)
 	}
+	if len(contents) == 0 {
+		return
+	}
 	msg := make([]byte, 0)
 	for _, content := range contents {
 		row := fmt.Sprintf("task_id:%s req_no:%s deadline:%s comment:%s taskTime:%s\n", content.taskId, content.reqNo, content.deadline, content.comment, content.estimatedWorkHour)

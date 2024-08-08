@@ -22,7 +22,7 @@ func (TaskInfo) TableName() string {
 
 type PatchsInfo struct {
 	PatchNo    string    `gorm:"column:patch_no;type:varchar(20);primaryKey;not null;comment:补丁号"`
-	ReqNo      string    `gorm:"column:req_no;type:varchar(20);not null;comment:需求号;index:patch_req_no_index"`
+	ReqNo      string    `gorm:"column:req_no;type:varchar(40);not null;comment:需求号;index:patch_req_no_index"`
 	Describe   string    `gorm:"column:describe;type:text;comment:问题描述"`
 	ClientName string    `gorm:"column:client_name;type:varchar(20);not null;comment:客户名称"`
 	Deadline   time.Time `gorm:"column:deadline;type:date;not null;comment:预计发布时间"`
@@ -37,7 +37,7 @@ func (PatchsInfo) TableName() string {
 type UserInfo struct {
 	Name     string `gorm:"column:name;type:varchar(20);not null;index;comment:姓名"`
 	JobNo    int    `gorm:"column:job_no;not null;comment:工号"`
-	Password string `gorm:"column:password;type:varchar(20);not null;comment:密码"`
+	Password string `gorm:"column:password;type:varchar(60);not null;comment:密码"`
 	Email    string `gorm:"column:email;type:varchar(50);not null;comment:邮箱"`
 	Group    int    `gorm:"column:group;default:0;comment:分组编号"`
 	RoleNo   int    `gorm:"column:role_no;default:0;comment:角色编号"`
