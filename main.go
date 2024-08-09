@@ -65,7 +65,7 @@ func main() {
 
 	pb.RegisterNotificationServiceServer(grpcServer, NotificationServer)
 
-	go NotificationServer.publishUpdates() //启动 Redis 订阅者
+	//go NotificationServer.publishUpdates() //启动 Redis 订阅者
 
 	listener, err := net.Listen("tcp", ":8001")
 	if err != nil {

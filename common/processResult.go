@@ -71,6 +71,7 @@ func AllPbPatchsToPatchsInfo(patchs []*pb.Patch) []models.PatchsInfo {
 			Deadline:   t,
 			Reason:     p.Reason,
 			Sponsor:    p.Sponsor,
+			State:      p.State,
 		}
 	}
 	return result
@@ -87,6 +88,7 @@ func AllPatchsInfoToPbPatchs(patchs []models.PatchsInfo) []*pb.Patch {
 			Describe:   p.Describe,
 			Sponsor:    p.Sponsor,
 			Deadline:   p.Deadline.Format("2006-01-02"),
+			State:      p.State,
 		}
 	}
 	return result
@@ -101,6 +103,7 @@ func OnePatchsInfoToPbPatchs(patchs models.PatchsInfo) *pb.Patch {
 		Describe:   patchs.Describe,
 		Sponsor:    patchs.Sponsor,
 		Deadline:   patchs.Deadline.Format("2006-01-02"),
+		State:      patchs.State,
 	}
 
 }

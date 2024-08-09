@@ -22,12 +22,13 @@ func (TaskInfo) TableName() string {
 
 type PatchsInfo struct {
 	PatchNo    string    `gorm:"column:patch_no;type:varchar(20);primaryKey;not null;comment:补丁号"`
-	ReqNo      string    `gorm:"column:req_no;type:varchar(40);not null;comment:需求号;index:patch_req_no_index"`
+	ReqNo      string    `gorm:"column:req_no;type:varchar(40);not null;comment:需求号;index:patch_table_req_no_index"`
 	Describe   string    `gorm:"column:describe;type:text;comment:问题描述"`
 	ClientName string    `gorm:"column:client_name;type:varchar(20);not null;comment:客户名称"`
 	Deadline   time.Time `gorm:"column:deadline;type:date;not null;comment:预计发布时间"`
 	Reason     string    `gorm:"column:reason;type:varchar(100);comment:补丁原因"`
 	Sponsor    string    `gorm:"column:sponsor;type:varchar(20);not null;comment:发起人"`
+	State      string    `gorm:"column:state;type:varchar(10);comment:发布状态"`
 }
 
 func (PatchsInfo) TableName() string {

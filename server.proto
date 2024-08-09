@@ -5,19 +5,18 @@ option go_package = "../pb";
 //protoc --go_out=./pb --go-grpc_out=./pb server.proto
 package notification;
 // 定义订阅请求消息
-message SubscriptionRequest {
-  string client_id = 1; // 客户端标识符，用于区分不同客户端
-}
-
-// 定义通知消息
-message Notification {
-  string message = 1; // 通知内容
-}
 
 // 定义通知服务
 service NotificationService {
   // 订阅更新，服务器端流式 RPC
   rpc Subscribe (SubscriptionRequest) returns (stream Notification);
+}
+message SubscriptionRequest {
+  string client_id = 1; // 客户端标识符，用于区分不同客户端
+}
+// 定义通知消息
+message Notification {
+  string message = 1; // 通知内容
 }
 
 message PublishRequest {
@@ -40,7 +39,7 @@ service Service {
   //修改单/任务
   rpc GetTaskListAll (GetTaskListAllRequest) returns (GetTaskListAllReply);
   rpc GetTaskListOne (GetTaskListOneRequest) returns (GetTaskListOneReply);
-  rpc ImportToTaskListTable (ImportToTaskListRequest) returns (ImportToTaskListReply);
+  rpc ImportXLSToTaskTable (ImportToTaskListRequest) returns (ImportToTaskListReply);
   //CURD
   rpc DelTask (DelTaskRequest) returns (DelTaskReply);
   rpc ModTask (ModTaskRequest) returns (ModTaskReply);
@@ -53,7 +52,6 @@ service Service {
   //补丁
   rpc GetPatchsAll (GetPatchsAllRequest) returns (GetPatchsAllReply);
   rpc GetOnePatchs (GetOnePatchsRequest) returns (GetOnePatchsReply);
-  rpc ModDeadLineInPatchs (MDLIPRequest) returns (MDLIPReply);
   rpc DelPatch (DelPatchRequest) returns (DelPatchReply);
   rpc ImportXLSToPatchTable (ImportXLSToPatchRequest) returns (ImportXLSToPatchReply);
   rpc ModPatch (ModPatchRequest) returns (ModPatchReply);
@@ -115,6 +113,7 @@ message patch {
   string deadline = 5;
   string reason = 6;
   string sponsor = 7;
+  string state = 8;
 }
 
 message ImportXLSToPatchRequest {
@@ -131,12 +130,7 @@ message GetPatchsAllReply {
   repeated patch patchs  = 1;
 }
 
-message MDLIPRequest {
-  string patchNo = 1;
-  string newDeadline = 2;
-  string user = 3;
-}
-message MDLIPReply {}
+
 
 message DelPatchRequest {
   string patchNo = 1;
