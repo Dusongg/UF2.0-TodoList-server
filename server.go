@@ -2,6 +2,7 @@ package main
 
 import (
 	"OrderManager/common"
+	"OrderManager/config"
 	"OrderManager/pb"
 	"context"
 	"errors"
@@ -25,7 +26,7 @@ type notificationServer struct {
 }
 
 func (s *notificationServer) updateDatabaseAndNotify(updateData string) {
-	err := s.rdb.Publish(context.Background(), "updates", updateData).Err()
+	err := s.rdb.Publish(context.Background(), "updates", updateData+"\r\nplease refresh to view").Err()
 	if err != nil {
 		log.Printf("Error updating database: %v", err)
 	}
@@ -33,6 +34,7 @@ func (s *notificationServer) updateDatabaseAndNotify(updateData string) {
 
 type modDeadlineInfo struct {
 	patchNo     string
+	reqNo       string
 	newDeadline string
 	user        string
 }
@@ -68,11 +70,17 @@ type modDeadlineInfo struct {
 func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.NotificationService_SubscribeServer) error {
 	s.mu.Lock()
 	s.clients[req.ClientId] = stream
-	log.Println(req.ClientId)
+	log.Printf("%s has subscribed\n", req.ClientId)
 	s.mu.Unlock()
 
 	pubsub := s.rdb.Subscribe(s.ctx, "updates")
 	ch := pubsub.Channel()
+
+	go func() {
+		<-stream.Context().Done()
+		Omap.offlineUser(req.ClientId)
+		pubsub.Close() // 关闭 Redis 订阅以退出 for 循环
+	}()
 
 	for msg := range ch {
 		re := regexp.MustCompile(`<([^>]*)>`)
@@ -91,6 +99,7 @@ func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.No
 		}
 	}
 
+	//TODO: 永远也走不到这里
 	s.mu.Lock()
 	delete(s.clients, req.ClientId)
 	log.Println("Unsubscribed client:", req.ClientId)
@@ -120,12 +129,18 @@ func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginReply
 		}
 		return nil, res.Error
 	}
-
+	//if user.State == models.Online {
+	//	return nil, errors.New("this user already online")
+	//}
+	if Omap.checkIfLoggedIn(user.Name) {
+		return nil, errors.New("this user already online")
+	}
 	//算法标识符 + 成本因子 + 盐值
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(in.Password))
 	if err != nil {
 		return nil, errors.New("wrong password")
 	} else {
+		Omap.loginUser(in.Name)
 		return &pb.LoginReply{}, nil
 	}
 }
@@ -142,7 +157,7 @@ func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.Regi
 	}
 	userinfo := UserInfo{
 		Name:     in.User.Name,
-		JobNo:    int(in.User.JobNum),
+		JobNo:    int32(in.User.JobNum),
 		Password: string(hashedPassword),
 		Email:    in.User.Email,
 	}
@@ -150,6 +165,44 @@ func (s *server) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.Regi
 		return nil, err
 	}
 	return &pb.RegisterReply{}, nil
+}
+func (s *server) GetUserInfo(ctx context.Context, in *pb.GetUserInfoRequest) (*pb.GetUserInfoReply, error) {
+	var info UserInfo
+	if err := db.Where("name = ?", in.UserName).First(&info).Error; err != nil {
+		return nil, err
+	}
+	return &pb.GetUserInfoReply{
+		JobNO:  info.JobNo,
+		Email:  info.Email,
+		Group:  int32(info.Group),
+		RoleNo: int32(info.RoleNo),
+	}, nil
+}
+
+func (s *server) ModUserInfo(ctx context.Context, in *pb.ModUserInfoRequest) (*pb.ModUserInfoReply, error) {
+	if in.ModPass {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(in.Pass), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, err
+		}
+		if err := db.Where("name = ?", in.Name).Updates(UserInfo{
+			Password: string(hashedPassword),
+			Email:    in.Email,
+			Group:    int8(in.Group),
+			RoleNo:   int8(in.RoleNo),
+		}).Error; err != nil {
+			return nil, err
+		}
+	} else {
+		if err := db.Where("name = ?", in.Name).Updates(UserInfo{
+			Email:  in.Email,
+			Group:  int8(in.Group),
+			RoleNo: int8(in.RoleNo),
+		}).Error; err != nil {
+			return nil, err
+		}
+	}
+	return &pb.ModUserInfoReply{}, nil
 }
 
 func (s *server) GetTaskListAll(ctx context.Context, in *pb.GetTaskListAllRequest) (*pb.GetTaskListAllReply, error) {
@@ -164,9 +217,8 @@ func (s *server) GetTaskListAll(ctx context.Context, in *pb.GetTaskListAllReques
 }
 func (s *server) GetTaskListOne(ctx context.Context, in *pb.GetTaskListOneRequest) (*pb.GetTaskListOneReply, error) {
 	var tasks []TaskInfo
-	res := db.Where("principal = ?", in.Name).Find(&tasks)
-	if res.Error != nil {
-		return nil, res.Error
+	if err := db.Where("principal = ?", in.Name).Find(&tasks).Error; err != nil {
+		return nil, err
 	}
 	reply := &pb.GetTaskListOneReply{}
 	reply.Tasks = common.AllTaskInfoToPbTask(tasks)
@@ -177,19 +229,26 @@ func (s *server) GetTaskListOne(ctx context.Context, in *pb.GetTaskListOneReques
 func (s *server) ImportXLSToTaskTable(ctx context.Context, in *pb.ImportToTaskListRequest) (*pb.ImportToTaskListReply, error) {
 	taskInfos := common.AllPbTaskToTaskInfo(in.Tasks)
 	tx := db.Begin()
-	if err := tx.Save(taskInfos).Error; err != nil {
-		tx.Rollback()
-		return nil, err
-	}
-	tx.Commit()
 	for _, taskInfo := range taskInfos {
+		res := db.Model(&PatchsInfo{}).Where("req_no = ?", taskInfo.ReqNo).Select("deadline")
+		if res.Error == nil {
+			res.Scan(&taskInfo.Deadline)
+		}
+		if err := tx.Create(&taskInfo).Error; err != nil {
+			log.Println(err)
+			continue
+		}
+
 		msg := fmt.Sprintf("<%s> -> import tasks counts: %d -> <%s>", in.User, len(in.Tasks), taskInfo.Principal)
 		NotificationServer.updateDatabaseAndNotify(msg)
 	}
-
+	tx.Commit()
 	return &pb.ImportToTaskListReply{}, nil
 }
 func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTaskReply, error) {
+	if !config.IsAdmin(in.User) && in.User != in.Principal {
+		return nil, errors.New("you don't have permission")
+	}
 	task := TaskInfo{}
 	if err := db.Where("task_id = ?", in.TaskNo).Delete(&task).Error; err != nil {
 		return nil, err
@@ -200,6 +259,9 @@ func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTas
 	}
 }
 func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTaskReply, error) {
+	if !config.IsAdmin(in.User) && in.User != in.T.Principal {
+		return nil, errors.New("you don't have permission")
+	}
 	if err := db.Save(common.OnePbTaskToTaskInfo(in.T)).Error; err != nil {
 		return nil, err
 	} else {
@@ -277,7 +339,7 @@ func (s *server) ModDeadLineInPatchsAndTasks(ctx context.Context, in *modDeadlin
 		return tx.Error
 	}
 
-	newDeadline, patchNo := in.newDeadline, in.patchNo
+	newDeadline, patchNo, reqNo := in.newDeadline, in.patchNo, in.reqNo
 
 	// 更新 patch_table 表中的 deadline
 	if modPatchs {
@@ -290,8 +352,6 @@ func (s *server) ModDeadLineInPatchsAndTasks(ctx context.Context, in *modDeadlin
 	}
 
 	// 更新 tasklist_table 表中的 deadline
-	var reqNo string
-	db.Model(&PatchsInfo{}).Select("req_no").Where("patch_no = ?", patchNo).Scan(&reqNo)
 	reqNos := strings.Split(reqNo, ",")
 	if err := db.Model(&TaskInfo{}).
 		Where("req_no IN ?", reqNos).
@@ -312,6 +372,9 @@ func (s *server) ModDeadLineInPatchsAndTasks(ctx context.Context, in *modDeadlin
 }
 
 func (s *server) DelPatch(ctx context.Context, in *pb.DelPatchRequest) (*pb.DelPatchReply, error) {
+	if !config.IsAdmin(in.User) {
+		return nil, errors.New("you don't have permission")
+	}
 	patchNo := in.PatchNo
 
 	tx := db.Begin()
@@ -360,6 +423,9 @@ func (s *server) GetOnePatchs(ctx context.Context, in *pb.GetOnePatchsRequest) (
 }
 
 func (s *server) ModPatch(ctx context.Context, in *pb.ModPatchRequest) (*pb.ModPatchReply, error) {
+	if !config.IsAdmin(in.User) {
+		return nil, errors.New("you don't have permission")
+	}
 	patchs := &PatchsInfo{PatchNo: in.P.PatchNo, ReqNo: in.P.ReqNo}
 	if err := db.Model(&patchs).Updates(&PatchsInfo{
 		ClientName: in.P.ClientName,
@@ -371,10 +437,15 @@ func (s *server) ModPatch(ctx context.Context, in *pb.ModPatchRequest) (*pb.ModP
 	}
 
 	var deadline time.Time
-	db.Table("patch_table").Where("patch_no = ?", patchs.PatchNo).First(&deadline)
+	db.Table("patch_table").Where("patch_no = ?", patchs.PatchNo).Scan(&deadline)
 
 	if deadline.Format("2006-01-02") != in.P.Deadline {
-		err := s.ModDeadLineInPatchsAndTasks(context.Background(), &modDeadlineInfo{patchNo: in.P.PatchNo, newDeadline: in.P.Deadline, user: in.User}, true)
+		err := s.ModDeadLineInPatchsAndTasks(context.Background(), &modDeadlineInfo{
+			patchNo:     in.P.PatchNo,
+			newDeadline: in.P.Deadline,
+			user:        in.User,
+			reqNo:       in.P.ReqNo,
+		}, true)
 		return nil, err
 	} else {
 		msg := fmt.Sprintf("<%s> -> modifiy patchs:%s -> <ALL>", in.User, in.P.PatchNo)

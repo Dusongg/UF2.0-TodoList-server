@@ -31,6 +31,8 @@ type PatchsInfo = models.PatchsInfo
 type UserInfo = models.UserInfo
 
 func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	tmpDb, err := gorm.Open(mysql.Open(config.GORM_DNS), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
@@ -58,9 +60,21 @@ func unaryInterceptor(
 }
 
 func main() {
+
+	//sigs := make(chan os.Signal, 1)
+	//signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 	go emailClock()
+	//go func() {
+	//	for {
+	//		time.Sleep(3 * time.Second)
+	//		log.Println("client nums: ", len(NotificationServer.clients))
+	//	}
+	//}()
 	//go testSendEmail()
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(unaryInterceptor))
+	defer grpcServer.GracefulStop()
+
 	pb.RegisterServiceServer(grpcServer, Server)
 
 	pb.RegisterNotificationServiceServer(grpcServer, NotificationServer)
@@ -76,4 +90,7 @@ func main() {
 	if err := grpcServer.Serve(listener); err != nil {
 		log.Fatal(err)
 	}
+
+	//<-sigs
+	log.Println("exit")
 }

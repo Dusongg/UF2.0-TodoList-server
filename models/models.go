@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+//const (
+//	Online  = true
+//	Offline = false
+//)
+
 type TaskInfo struct {
 	TaskID             string    `gorm:"column:task_id;type:varchar(25);primaryKey;not null;comment:任务单号"`
 	Comment            string    `gorm:"column:comment;type:varchar(100);comment:任务描述"`
@@ -37,11 +42,12 @@ func (PatchsInfo) TableName() string {
 
 type UserInfo struct {
 	Name     string `gorm:"column:name;type:varchar(20);not null;index;comment:姓名"`
-	JobNo    int    `gorm:"column:job_no;not null;comment:工号"`
+	JobNo    int32  `gorm:"column:job_no;not null;comment:工号"`
 	Password string `gorm:"column:password;type:varchar(60);not null;comment:密码"`
 	Email    string `gorm:"column:email;type:varchar(50);not null;comment:邮箱"`
-	Group    int    `gorm:"column:group;default:0;comment:分组编号"`
-	RoleNo   int    `gorm:"column:role_no;default:0;comment:角色编号"`
+	Group    int8   `gorm:"column:group;default:0;comment:分组编号"`
+	RoleNo   int8   `gorm:"column:role_no;default:0;comment:角色编号"`
+	//State    bool   `gorm:"column:state;default:false;comment:登录状态"`
 }
 
 func (UserInfo) TableName() string {

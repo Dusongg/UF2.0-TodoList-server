@@ -35,6 +35,8 @@ message PublishResponse {
 service Service {
   rpc Login (LoginRequest) returns (LoginReply);
   rpc Register (RegisterRequest) returns (RegisterReply);
+  rpc GetUserInfo (GetUserInfoRequest) returns (GetUserInfoReply);
+  rpc ModUserInfo (ModUserInfoRequest) returns (ModUserInfoReply);
 
   //修改单/任务
   rpc GetTaskListAll (GetTaskListAllRequest) returns (GetTaskListAllReply);
@@ -204,4 +206,24 @@ message RegisterRequest {
 }
 
 message RegisterReply {
+}
+
+message GetUserInfoRequest {
+  string userName = 1;
+}
+message GetUserInfoReply {
+  int32 jobNO = 1;
+  string email = 2;
+  int32 group = 3;
+  int32 roleNo = 4;
+}
+message ModUserInfoRequest {
+  bool modPass = 1;
+  string pass = 2;
+  string email = 3;
+  int32 group = 4;
+  int32 roleNo = 5;
+  string name =  6;
+}
+message ModUserInfoReply{
 }
