@@ -32,11 +32,20 @@ type PatchsInfo = models.PatchsInfo
 type UserInfo = models.UserInfo
 
 func init() {
+	if config.GormDNS == "" {
+		config.GormDNS = "root:123123@tcp(127.0.0.1:3306)/OrderManager?charset=utf8mb4&parseTime=True&loc=Local" //本地测试
+	}
+	if config.RedisHost == "" {
+		config.RedisHost = "redis"
+	}
+	if config.RedisPort == "" {
+		config.RedisPort = "6379"
+	}
 	//log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	tmpDb, err := gorm.Open(mysql.Open(config.GORM_DNS), &gorm.Config{})
+	tmpDb, err := gorm.Open(mysql.Open(config.GormDNS), &gorm.Config{})
 	if err != nil {
-		logrus.Fatal("Failed to connect to database:", err)
+		logrus.Fatal("Failed to connect to database:", err, config.GormDNS)
 	}
 	db = tmpDb
 	err = db.AutoMigrate(&TaskInfo{}, &PatchsInfo{}, &UserInfo{})

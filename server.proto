@@ -54,7 +54,7 @@ service Service {
   //补丁
   rpc GetPatchsAll (GetPatchsAllRequest) returns (GetPatchsAllReply);
   rpc GetOnePatchs (GetOnePatchsRequest) returns (GetOnePatchsReply);
-  rpc GetPatchsByState (GetPatchsByStateRequest) returns (GetPatchsByStateReply);
+  rpc QueryPatchsWithField (QueryPatchsWithFieldRequest) returns (QueryPatchsWithFieldReply);
   rpc DelPatch (DelPatchRequest) returns (DelPatchReply);
   rpc ImportXLSToPatchTable (ImportXLSToPatchRequest) returns (ImportXLSToPatchReply);
   rpc ModPatch (ModPatchRequest) returns (ModPatchReply);
@@ -186,10 +186,11 @@ message GetOnePatchsRequest {
 message GetOnePatchsReply {
   patch p = 1;
 }
-message GetPatchsByStateRequest {
-  string state = 1;
+message QueryPatchsWithFieldRequest {
+  string fieldName = 1;
+  string fieldValue = 2;
 }
-message  GetPatchsByStateReply {
+message  QueryPatchsWithFieldReply {
   repeated patch ps = 1;
 }
 

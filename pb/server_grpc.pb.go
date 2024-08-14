@@ -159,7 +159,7 @@ const (
 	Service_QueryTaskWithField_FullMethodName    = "/notification.Service/QueryTaskWithField"
 	Service_GetPatchsAll_FullMethodName          = "/notification.Service/GetPatchsAll"
 	Service_GetOnePatchs_FullMethodName          = "/notification.Service/GetOnePatchs"
-	Service_GetPatchsByState_FullMethodName      = "/notification.Service/GetPatchsByState"
+	Service_QueryPatchsWithField_FullMethodName  = "/notification.Service/QueryPatchsWithField"
 	Service_DelPatch_FullMethodName              = "/notification.Service/DelPatch"
 	Service_ImportXLSToPatchTable_FullMethodName = "/notification.Service/ImportXLSToPatchTable"
 	Service_ModPatch_FullMethodName              = "/notification.Service/ModPatch"
@@ -188,7 +188,7 @@ type ServiceClient interface {
 	// 补丁
 	GetPatchsAll(ctx context.Context, in *GetPatchsAllRequest, opts ...grpc.CallOption) (*GetPatchsAllReply, error)
 	GetOnePatchs(ctx context.Context, in *GetOnePatchsRequest, opts ...grpc.CallOption) (*GetOnePatchsReply, error)
-	GetPatchsByState(ctx context.Context, in *GetPatchsByStateRequest, opts ...grpc.CallOption) (*GetPatchsByStateReply, error)
+	QueryPatchsWithField(ctx context.Context, in *QueryPatchsWithFieldRequest, opts ...grpc.CallOption) (*QueryPatchsWithFieldReply, error)
 	DelPatch(ctx context.Context, in *DelPatchRequest, opts ...grpc.CallOption) (*DelPatchReply, error)
 	ImportXLSToPatchTable(ctx context.Context, in *ImportXLSToPatchRequest, opts ...grpc.CallOption) (*ImportXLSToPatchReply, error)
 	ModPatch(ctx context.Context, in *ModPatchRequest, opts ...grpc.CallOption) (*ModPatchReply, error)
@@ -342,10 +342,10 @@ func (c *serviceClient) GetOnePatchs(ctx context.Context, in *GetOnePatchsReques
 	return out, nil
 }
 
-func (c *serviceClient) GetPatchsByState(ctx context.Context, in *GetPatchsByStateRequest, opts ...grpc.CallOption) (*GetPatchsByStateReply, error) {
+func (c *serviceClient) QueryPatchsWithField(ctx context.Context, in *QueryPatchsWithFieldRequest, opts ...grpc.CallOption) (*QueryPatchsWithFieldReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetPatchsByStateReply)
-	err := c.cc.Invoke(ctx, Service_GetPatchsByState_FullMethodName, in, out, cOpts...)
+	out := new(QueryPatchsWithFieldReply)
+	err := c.cc.Invoke(ctx, Service_QueryPatchsWithField_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +405,7 @@ type ServiceServer interface {
 	// 补丁
 	GetPatchsAll(context.Context, *GetPatchsAllRequest) (*GetPatchsAllReply, error)
 	GetOnePatchs(context.Context, *GetOnePatchsRequest) (*GetOnePatchsReply, error)
-	GetPatchsByState(context.Context, *GetPatchsByStateRequest) (*GetPatchsByStateReply, error)
+	QueryPatchsWithField(context.Context, *QueryPatchsWithFieldRequest) (*QueryPatchsWithFieldReply, error)
 	DelPatch(context.Context, *DelPatchRequest) (*DelPatchReply, error)
 	ImportXLSToPatchTable(context.Context, *ImportXLSToPatchRequest) (*ImportXLSToPatchReply, error)
 	ModPatch(context.Context, *ModPatchRequest) (*ModPatchReply, error)
@@ -458,8 +458,8 @@ func (UnimplementedServiceServer) GetPatchsAll(context.Context, *GetPatchsAllReq
 func (UnimplementedServiceServer) GetOnePatchs(context.Context, *GetOnePatchsRequest) (*GetOnePatchsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOnePatchs not implemented")
 }
-func (UnimplementedServiceServer) GetPatchsByState(context.Context, *GetPatchsByStateRequest) (*GetPatchsByStateReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPatchsByState not implemented")
+func (UnimplementedServiceServer) QueryPatchsWithField(context.Context, *QueryPatchsWithFieldRequest) (*QueryPatchsWithFieldReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryPatchsWithField not implemented")
 }
 func (UnimplementedServiceServer) DelPatch(context.Context, *DelPatchRequest) (*DelPatchReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DelPatch not implemented")
@@ -735,20 +735,20 @@ func _Service_GetOnePatchs_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Service_GetPatchsByState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPatchsByStateRequest)
+func _Service_QueryPatchsWithField_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPatchsWithFieldRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ServiceServer).GetPatchsByState(ctx, in)
+		return srv.(ServiceServer).QueryPatchsWithField(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Service_GetPatchsByState_FullMethodName,
+		FullMethod: Service_QueryPatchsWithField_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ServiceServer).GetPatchsByState(ctx, req.(*GetPatchsByStateRequest))
+		return srv.(ServiceServer).QueryPatchsWithField(ctx, req.(*QueryPatchsWithFieldRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -871,8 +871,8 @@ var Service_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Service_GetOnePatchs_Handler,
 		},
 		{
-			MethodName: "GetPatchsByState",
-			Handler:    _Service_GetPatchsByState_Handler,
+			MethodName: "QueryPatchsWithField",
+			Handler:    _Service_QueryPatchsWithField_Handler,
 		},
 		{
 			MethodName: "DelPatch",

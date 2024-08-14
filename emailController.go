@@ -27,24 +27,20 @@ func emailClock() {
 	for {
 		now := time.Now()
 
-		// 计算下一次发送时间
-		next9AM := time.Date(now.Year(), now.Month(), now.Day(), 9, 0, 0, 0, now.Location())
-		next1PM := time.Date(now.Year(), now.Month(), now.Day(), 13, 0, 0, 0, now.Location())
-
-		if now.After(next9AM) {
-			next9AM = next9AM.Add(24 * time.Hour)
+		if now.After(config.TimePoint1) {
+			config.TimePoint1 = config.TimePoint1.Add(24 * time.Hour)
 		}
-		if now.After(next1PM) {
-			next1PM = next1PM.Add(24 * time.Hour)
+		if now.After(config.TimePoint2) {
+			config.TimePoint2 = config.TimePoint2.Add(24 * time.Hour)
 		}
 
 		// 等待到下一个发送时间
-		if next9AM.Before(next1PM) {
-			time.Sleep(next9AM.Sub(now))
+		if config.TimePoint1.Before(config.TimePoint2) {
+			time.Sleep(config.TimePoint1.Sub(now))
 			queryAndSendEmail()
 
 		} else {
-			time.Sleep(next1PM.Sub(now))
+			time.Sleep(config.TimePoint2.Sub(now))
 			queryAndSendEmail()
 		}
 	}

@@ -110,7 +110,7 @@ func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.No
 
 var NotificationServer = &notificationServer{
 	clients: make(map[string]pb.NotificationService_SubscribeServer),
-	rdb:     redis.NewClient(&redis.Options{Addr: "localhost:6379"}),
+	rdb:     redis.NewClient(&redis.Options{Addr: fmt.Sprintf("%s:%s", config.RedisHost, config.RedisPort)}),
 	ctx:     context.Background(),
 }
 
@@ -422,12 +422,13 @@ func (s *server) GetOnePatchs(ctx context.Context, in *pb.GetOnePatchsRequest) (
 	return &pb.GetOnePatchsReply{P: common.OnePatchsInfoToPbPatchs(patchs)}, nil
 }
 
-func (s *server) GetPatchsByState(ctx context.Context, in *pb.GetPatchsByStateRequest) (*pb.GetPatchsByStateReply, error) {
+func (s *server) QueryPatchsWithField(ctx context.Context, in *pb.QueryPatchsWithFieldRequest) (*pb.QueryPatchsWithFieldReply, error) {
 	var patchs []PatchsInfo
-	if err := db.Where("state = ?", in.State).Find(&patchs).Error; err != nil {
+	qurey := fmt.Sprintf("%s = ?", in.FieldName)
+	if err := db.Where(qurey, in.FieldValue).Find(&patchs).Error; err != nil {
 		return nil, err
 	}
-	return &pb.GetPatchsByStateReply{Ps: common.AllPatchsInfoToPbPatchs(patchs)}, nil
+	return &pb.QueryPatchsWithFieldReply{Ps: common.AllPatchsInfoToPbPatchs(patchs)}, nil
 }
 
 func (s *server) ModPatch(ctx context.Context, in *pb.ModPatchRequest) (*pb.ModPatchReply, error) {
