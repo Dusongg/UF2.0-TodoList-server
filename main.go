@@ -5,11 +5,12 @@ import (
 	"OrderManager/models"
 	"OrderManager/pb"
 	"context"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"log"
 	"net"
 )
 
@@ -31,16 +32,16 @@ type PatchsInfo = models.PatchsInfo
 type UserInfo = models.UserInfo
 
 func init() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	//log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	tmpDb, err := gorm.Open(mysql.Open(config.GORM_DNS), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		logrus.Fatal("Failed to connect to database:", err)
 	}
 	db = tmpDb
 	err = db.AutoMigrate(&TaskInfo{}, &PatchsInfo{}, &UserInfo{})
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 }
 
@@ -54,12 +55,19 @@ func unaryInterceptor(
 	// Retrieve client information
 	p, ok := peer.FromContext(ctx)
 	if ok {
-		log.Printf("Received request from:%s", p.String())
+		logrus.Infof("Received request from:%s", p.String())
 	}
 	return handler(ctx, req)
 }
 
 func main() {
+	logrus.SetOutput(&lumberjack.Logger{
+		Filename:   "./logs/app.log",
+		MaxSize:    100, // MB
+		MaxBackups: 30,
+		MaxAge:     0, // Disable age-based rotation
+		Compress:   true,
+	})
 
 	//sigs := make(chan os.Signal, 1)
 	//signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -72,7 +80,8 @@ func main() {
 	//	}
 	//}()
 	//go testSendEmail()
-	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(unaryInterceptor))
+	//grpcServer := grpc.NewServer(grpc.UnaryInterceptor(unaryInterceptor))
+	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
 
 	pb.RegisterServiceServer(grpcServer, Server)
@@ -83,14 +92,13 @@ func main() {
 
 	listener, err := net.Listen("tcp", ":8001")
 	if err != nil {
-		log.Fatal("服务监听失败", err)
+		logrus.Info("服务监听失败", err)
 	} else {
-		log.Println("正在监听端口：", listener.Addr())
+		logrus.Info("正在监听端口：", listener.Addr())
 	}
 	if err := grpcServer.Serve(listener); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	//<-sigs
-	log.Println("exit")
 }

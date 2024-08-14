@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"log"
 	"regexp"
 	"strings"
 	"sync"
@@ -28,7 +28,7 @@ type notificationServer struct {
 func (s *notificationServer) updateDatabaseAndNotify(updateData string) {
 	err := s.rdb.Publish(context.Background(), "updates", updateData+"\r\nplease refresh to view").Err()
 	if err != nil {
-		log.Printf("Error updating database: %v", err)
+		logrus.Warningf("Error updating database: %v", err)
 	}
 }
 
@@ -70,7 +70,7 @@ type modDeadlineInfo struct {
 func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.NotificationService_SubscribeServer) error {
 	s.mu.Lock()
 	s.clients[req.ClientId] = stream
-	log.Printf("%s has subscribed\n", req.ClientId)
+	logrus.Infof("%s has subscribed\n", req.ClientId)
 	s.mu.Unlock()
 
 	pubsub := s.rdb.Subscribe(s.ctx, "updates")
@@ -102,7 +102,7 @@ func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.No
 	//TODO: 永远也走不到这里
 	s.mu.Lock()
 	delete(s.clients, req.ClientId)
-	log.Println("Unsubscribed client:", req.ClientId)
+	logrus.Info("Unsubscribed client:", req.ClientId)
 	s.mu.Unlock()
 
 	return nil
@@ -235,7 +235,7 @@ func (s *server) ImportXLSToTaskTable(ctx context.Context, in *pb.ImportToTaskLi
 			res.Scan(&taskInfo.Deadline)
 		}
 		if err := tx.Create(&taskInfo).Error; err != nil {
-			log.Println(err)
+			logrus.Warning(err)
 			continue
 		}
 
@@ -313,7 +313,7 @@ func (s *server) ImportXLSToPatchTable(ctx context.Context, in *pb.ImportXLSToPa
 			newDeadline := patch.Deadline
 			err := s.ModDeadLineInPatchsAndTasks(context.Background(), &modDeadlineInfo{patchNo: patch.PatchNo, newDeadline: newDeadline, user: in.User}, false)
 			if err != nil {
-				log.Println(err)
+				logrus.Warning(err)
 			}
 		}()
 	}
@@ -379,7 +379,7 @@ func (s *server) DelPatch(ctx context.Context, in *pb.DelPatchRequest) (*pb.DelP
 
 	tx := db.Begin()
 	if tx.Error != nil {
-		log.Fatalf("failed to begin transaction: %v", tx.Error)
+		logrus.Errorf("failed to begin transaction: %v", tx.Error)
 		return nil, tx.Error
 	}
 
@@ -396,7 +396,7 @@ func (s *server) DelPatch(ctx context.Context, in *pb.DelPatchRequest) (*pb.DelP
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		log.Fatalf("failed to commit transaction: %v", err)
+		logrus.Errorf("failed to commit transaction: %v", err)
 		return nil, err
 	}
 
@@ -420,6 +420,14 @@ func (s *server) GetOnePatchs(ctx context.Context, in *pb.GetOnePatchsRequest) (
 		return nil, err
 	}
 	return &pb.GetOnePatchsReply{P: common.OnePatchsInfoToPbPatchs(patchs)}, nil
+}
+
+func (s *server) GetPatchsByState(ctx context.Context, in *pb.GetPatchsByStateRequest) (*pb.GetPatchsByStateReply, error) {
+	var patchs []PatchsInfo
+	if err := db.Where("state = ?", in.State).Find(&patchs).Error; err != nil {
+		return nil, err
+	}
+	return &pb.GetPatchsByStateReply{Ps: common.AllPatchsInfoToPbPatchs(patchs)}, nil
 }
 
 func (s *server) ModPatch(ctx context.Context, in *pb.ModPatchRequest) (*pb.ModPatchReply, error) {

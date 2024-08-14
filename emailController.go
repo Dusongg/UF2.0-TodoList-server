@@ -3,6 +3,7 @@ package main
 import (
 	"OrderManager/config"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"net/smtp"
 	"sync"
@@ -56,7 +57,7 @@ func queryAndSendEmail() {
 	}
 	var ne []nameAndEmail
 	if err := db.Table("user_table").Select("name", "email").Find(&ne).Error; err != nil {
-		log.Println(err)
+		logrus.Warning(err)
 		return
 	}
 
@@ -76,7 +77,7 @@ func queryAndSendEmail() {
 func sendEmail(name string, email string) {
 	contents, err := querySendContent(name)
 	if err != nil {
-		log.Println(err)
+		logrus.Warning(err)
 	}
 	if len(contents) == 0 {
 		return
@@ -88,7 +89,7 @@ func sendEmail(name string, email string) {
 	}
 	err = smtp.SendMail(config.Addr, config.Auth, config.Sender, []string{email}, msg)
 	if err != nil {
-		log.Println(err)
+		logrus.Warning(err)
 	}
 }
 
@@ -104,7 +105,6 @@ func querySendContent(name string) ([]sendContent, error) {
 
 	var ct []sendContent
 	if err := db.Table("tasklist_table").Select("task_id", "req_no", "deadline", "comment", "estimated_work_hours").Where("principal = ?", name).Find(&ct).Error; err != nil {
-		log.Println(err)
 		return nil, err
 	}
 	return ct, nil
