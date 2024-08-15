@@ -1,17 +1,18 @@
 package main
 
 import (
-	"OrderManager/config"
 	"OrderManager/models"
 	"OrderManager/pb"
 	"context"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
-	"gopkg.in/natefinch/lumberjack.v2"
+	"google.golang.org/grpc/reflection"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"log"
 	"net"
+	"os"
 )
 
 const (
@@ -31,21 +32,40 @@ type TaskInfo = models.TaskInfo
 type PatchsInfo = models.PatchsInfo
 type UserInfo = models.UserInfo
 
-func init() {
-	if config.GormDNS == "" {
-		config.GormDNS = "root:123123@tcp(127.0.0.1:3306)/OrderManager?charset=utf8mb4&parseTime=True&loc=Local" //本地测试
-	}
-	if config.RedisHost == "" {
-		config.RedisHost = "redis"
-	}
-	if config.RedisPort == "" {
-		config.RedisPort = "6379"
-	}
-	//log.SetFlags(log.LstdFlags | log.Lshortfile)
+var adminMap = make(map[string]bool)
 
-	tmpDb, err := gorm.Open(mysql.Open(config.GormDNS), &gorm.Config{})
+func isAdmin(in string) bool {
+	_, ok := adminMap[in]
+	return ok
+}
+func init() {
+	for _, admin := range Conf.Admins {
+		adminMap[admin] = true
+	}
+	//logrus.Error(NotificationServer.rdb.Ping(context.Background()).Err())
+
+	// 设置日志
+	//logrus.SetOutput(&lumberjack.Logger{
+	//	Filename:   Conf.LogPath,
+	//	MaxSize:    100, // MB
+	//	MaxBackups: 30,
+	//	MaxAge:     0, // Disable age-based rotation
+	//	Compress:   true,
+	//})
+
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	//测试
+	logrus.SetOutput(os.Stdout)
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+
+	if Conf.Redis.Port == "" || Conf.Redis.Host == "" || Conf.MySQL.GormDNS == "" {
+		logrus.Fatalf("服务器链接数据库错误：redisHost: %s, redisPort: %s, GormDNS: %s", Conf.Redis.Port, Conf.Redis.Host, Conf.MySQL.GormDNS)
+	}
+
+	tmpDb, err := gorm.Open(mysql.Open(Conf.MySQL.GormDNS), &gorm.Config{})
 	if err != nil {
-		logrus.Fatal("Failed to connect to database:", err, config.GormDNS)
+		logrus.Fatal("Failed to connect to database:", err, Conf.MySQL.GormDNS)
 	}
 	db = tmpDb
 	err = db.AutoMigrate(&TaskInfo{}, &PatchsInfo{}, &UserInfo{})
@@ -70,13 +90,6 @@ func unaryInterceptor(
 }
 
 func main() {
-	logrus.SetOutput(&lumberjack.Logger{
-		Filename:   "./logs/app.log",
-		MaxSize:    100, // MB
-		MaxBackups: 30,
-		MaxAge:     0, // Disable age-based rotation
-		Compress:   true,
-	})
 
 	//sigs := make(chan os.Signal, 1)
 	//signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -96,6 +109,13 @@ func main() {
 	pb.RegisterServiceServer(grpcServer, Server)
 
 	pb.RegisterNotificationServiceServer(grpcServer, NotificationServer)
+
+	/*
+		gRPC 反射是一种机制，允许 gRPC 客户端在不知道服务的 proto 文件的情况下，动态查询服务的描述符信息（包括服务名、方法名、消息结构等）。
+		grpcurl 依赖于这个功能来调用 gRPC 方法，如果服务器没有启用反射，你需要手动提供 .proto 文件的信息。
+	*/
+	//启用反射服务
+	reflection.Register(grpcServer)
 
 	//go NotificationServer.publishUpdates() //启动 Redis 订阅者
 

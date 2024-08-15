@@ -2,7 +2,6 @@ package main
 
 import (
 	"OrderManager/common"
-	"OrderManager/config"
 	"OrderManager/pb"
 	"context"
 	"errors"
@@ -11,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"log"
 	"regexp"
 	"strings"
 	"sync"
@@ -25,9 +25,16 @@ type notificationServer struct {
 	ctx     context.Context
 }
 
+var NotificationServer = &notificationServer{
+	clients: make(map[string]pb.NotificationService_SubscribeServer),
+	rdb:     redis.NewClient(&redis.Options{Addr: fmt.Sprintf("%s:%s", Conf.Redis.Host, Conf.Redis.Port)}),
+	ctx:     context.Background(),
+}
+
 func (s *notificationServer) updateDatabaseAndNotify(updateData string) {
-	err := s.rdb.Publish(context.Background(), "updates", updateData+"\r\nplease refresh to view").Err()
-	if err != nil {
+	log.Println(updateData)
+	msg := fmt.Sprintf("%s: %s -- refresh to view", time.Now().Format("2006-01-02 15:04:05"), updateData)
+	if err := s.rdb.Publish(context.Background(), "updates", msg).Err(); err != nil {
 		logrus.Warningf("Error updating database: %v", err)
 	}
 }
@@ -39,40 +46,14 @@ type modDeadlineInfo struct {
 	user        string
 }
 
-//
-//func (s *notificationServer) publishUpdates() {
-//	pubsub := s.rdb.Subscribe(s.ctx, "updates")
-//	ch := pubsub.Channel()
-//
-//	for msg := range ch {
-//		s.mu.Lock()
-//		defer s.mu.Unlock() // 确保每次调用后都解锁
-//
-//		for name, client := range s.clients {
-//			re := regexp.MustCompile(`<([^>]*)>`)
-//			matches := re.FindAllStringSubmatch(msg.Payload, -1)
-//			if len(matches) != 2 {
-//				continue
-//			}
-//			from := matches[0][1]
-//			to := matches[1][1]
-//			if from == name || (to != "ALL" && to != name) {
-//				log.Printf("from:%s, to:%s, name: %s", from, to, name)
-//				continue
-//			}
-//			if err := client.Send(&pb.Notification{Message: msg.Payload}); err != nil {
-//				log.Printf("Failed to send notification: %v", err)
-//			}
-//		}
-//	}
-//}
-
+// Subscribe 多个客户端调用
 func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.NotificationService_SubscribeServer) error {
 	s.mu.Lock()
 	s.clients[req.ClientId] = stream
 	logrus.Infof("%s has subscribed\n", req.ClientId)
 	s.mu.Unlock()
 
+	//TODO: 没有做持久化
 	pubsub := s.rdb.Subscribe(s.ctx, "updates")
 	ch := pubsub.Channel()
 
@@ -83,6 +64,7 @@ func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.No
 	}()
 
 	for msg := range ch {
+
 		re := regexp.MustCompile(`<([^>]*)>`)
 		matches := re.FindAllStringSubmatch(msg.Payload, -1)
 		if len(matches) != 2 {
@@ -99,7 +81,6 @@ func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.No
 		}
 	}
 
-	//TODO: 永远也走不到这里
 	s.mu.Lock()
 	delete(s.clients, req.ClientId)
 	logrus.Info("Unsubscribed client:", req.ClientId)
@@ -108,17 +89,15 @@ func (s *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.No
 	return nil
 }
 
-var NotificationServer = &notificationServer{
-	clients: make(map[string]pb.NotificationService_SubscribeServer),
-	rdb:     redis.NewClient(&redis.Options{Addr: fmt.Sprintf("%s:%s", config.RedisHost, config.RedisPort)}),
-	ctx:     context.Background(),
-}
-
 type server struct {
 	pb.UnimplementedServiceServer
 }
 
 var Server = &server{}
+
+func (s *server) SayHello(ctx context.Context, in *pb.TestRequest) (*pb.TestReply, error) {
+	return &pb.TestReply{Answer: "Hello " + in.Name}, nil
+}
 
 func (s *server) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginReply, error) {
 	var user UserInfo
@@ -246,7 +225,7 @@ func (s *server) ImportXLSToTaskTable(ctx context.Context, in *pb.ImportToTaskLi
 	return &pb.ImportToTaskListReply{}, nil
 }
 func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTaskReply, error) {
-	if !config.IsAdmin(in.User) && in.User != in.Principal {
+	if !isAdmin(in.User) && in.User != in.Principal {
 		return nil, errors.New("you don't have permission")
 	}
 	task := TaskInfo{}
@@ -259,13 +238,14 @@ func (s *server) DelTask(ctx context.Context, in *pb.DelTaskRequest) (*pb.DelTas
 	}
 }
 func (s *server) ModTask(ctx context.Context, in *pb.ModTaskRequest) (*pb.ModTaskReply, error) {
-	if !config.IsAdmin(in.User) && in.User != in.T.Principal {
+	if !isAdmin(in.User) && in.User != in.T.Principal {
 		return nil, errors.New("you don't have permission")
 	}
 	if err := db.Save(common.OnePbTaskToTaskInfo(in.T)).Error; err != nil {
 		return nil, err
 	} else {
 		msg := fmt.Sprintf("<%s> -> modifiy task: %s -> <%s>", in.User, in.T.TaskId, in.T.Principal)
+
 		NotificationServer.updateDatabaseAndNotify(msg)
 		return &pb.ModTaskReply{}, nil
 
@@ -372,7 +352,7 @@ func (s *server) ModDeadLineInPatchsAndTasks(ctx context.Context, in *modDeadlin
 }
 
 func (s *server) DelPatch(ctx context.Context, in *pb.DelPatchRequest) (*pb.DelPatchReply, error) {
-	if !config.IsAdmin(in.User) {
+	if !isAdmin(in.User) {
 		return nil, errors.New("you don't have permission")
 	}
 	patchNo := in.PatchNo
@@ -432,7 +412,7 @@ func (s *server) QueryPatchsWithField(ctx context.Context, in *pb.QueryPatchsWit
 }
 
 func (s *server) ModPatch(ctx context.Context, in *pb.ModPatchRequest) (*pb.ModPatchReply, error) {
-	if !config.IsAdmin(in.User) {
+	if !isAdmin(in.User) {
 		return nil, errors.New("you don't have permission")
 	}
 	patchs := &PatchsInfo{PatchNo: in.P.PatchNo, ReqNo: in.P.ReqNo}

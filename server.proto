@@ -33,6 +33,8 @@ message PublishResponse {
 
 // 定义服务
 service Service {
+  rpc SayHello (testRequest) returns (testReply);
+
   rpc Login (LoginRequest) returns (LoginReply);
   rpc Register (RegisterRequest) returns (RegisterReply);
   rpc GetUserInfo (GetUserInfoRequest) returns (GetUserInfoReply);
@@ -235,4 +237,11 @@ message ModUserInfoRequest {
   string name =  6;
 }
 message ModUserInfoReply{
+}
+
+message testRequest {
+  string name = 1;
+}
+message testReply {
+  string answer = 1;
 }

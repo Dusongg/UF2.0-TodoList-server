@@ -5,9 +5,17 @@ services:
     build: .
     container_name: ordermanager
     environment:
-      GORM_DNS: "root:123123@tcp(db:3306)/ordermanager?charset=utf8mb4&parseTime=True&loc=Local"
-      REDIS_HOST: "redis"
-      REDIS_PORT: "6379"
+      GORM_DNS: ${GORM_DNS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_SENDER: ${SENDER}
+      EMAIL_SENDER_PASSWORD: ${PASSWORD}
+      SEND_MAIL_TIME_POINT1: ${SEND_MAIL_TIME_POINT1}  #9:00 AM
+      SEND_MAIL_TIME_POINT2: ${SEND_MAIL_TIME_POINT2}  #13:00 PM
+      LOG_PATH: ${LOG_PATH}
+      ADMIN: ${ADMIN}
     depends_on:
       - db
       - redis
@@ -18,12 +26,12 @@ services:
     image: mysql:8.0
     container_name: mysql
     environment:
-      MYSQL_ROOT_PASSWORD: 123123
-      MYSQL_DATABASE: ordermanager
-      MYSQL_USER: dusong
-      MYSQL_PASSWORD: 123123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3308:3306"
+      - "13306:3306"
     volumes:
       - db_data:/var/lib/mysql
 
@@ -31,7 +39,7 @@ services:
     image: redis:latest
     container_name: redis
     ports:
-      - "6379:6379"
+      - "16379:6379"
 
 volumes:
   db_data:

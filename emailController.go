@@ -1,7 +1,6 @@
 package main
 
 import (
-	"OrderManager/config"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"log"
@@ -14,8 +13,8 @@ func testSendEmail() {
 	//email := "dusong700@gmail.com"
 	email := "728869268@qq.com"
 	msg := []byte("测试邮件")
-
-	err := smtp.SendMail(config.Addr, config.Auth, config.Sender, []string{email}, msg)
+	auth := smtp.PlainAuth("", Conf.SMTP.Sender, Conf.SMTP.SenderPassword, Conf.SMTP.Host)
+	err := smtp.SendMail(Conf.SMTP.Host+":"+Conf.SMTP.Port, auth, Conf.SMTP.Sender, []string{email}, msg)
 	if err != nil {
 		log.Println("发送失败：", err)
 	} else {
@@ -27,20 +26,20 @@ func emailClock() {
 	for {
 		now := time.Now()
 
-		if now.After(config.TimePoint1) {
-			config.TimePoint1 = config.TimePoint1.Add(24 * time.Hour)
+		if now.After(Conf.SMTP.P1) {
+			Conf.SMTP.P1 = Conf.SMTP.P1.Add(24 * time.Hour)
 		}
-		if now.After(config.TimePoint2) {
-			config.TimePoint2 = config.TimePoint2.Add(24 * time.Hour)
+		if now.After(Conf.SMTP.P2) {
+			Conf.SMTP.P2 = Conf.SMTP.P2.Add(24 * time.Hour)
 		}
 
 		// 等待到下一个发送时间
-		if config.TimePoint1.Before(config.TimePoint2) {
-			time.Sleep(config.TimePoint1.Sub(now))
+		if Conf.SMTP.P1.Before(Conf.SMTP.P2) {
+			time.Sleep(Conf.SMTP.P1.Sub(now))
 			queryAndSendEmail()
 
 		} else {
-			time.Sleep(config.TimePoint2.Sub(now))
+			time.Sleep(Conf.SMTP.P2.Sub(now))
 			queryAndSendEmail()
 		}
 	}
@@ -83,7 +82,9 @@ func sendEmail(name string, email string) {
 		row := fmt.Sprintf("task_id:%s req_no:%s deadline:%s comment:%s taskTime:%s\n", content.taskId, content.reqNo, content.deadline, content.comment, content.estimatedWorkHour)
 		msg = append(msg, []byte(row)...)
 	}
-	err = smtp.SendMail(config.Addr, config.Auth, config.Sender, []string{email}, msg)
+	auth := smtp.PlainAuth("", Conf.SMTP.Sender, Conf.SMTP.SenderPassword, Conf.SMTP.Host)
+
+	err = smtp.SendMail(Conf.SMTP.Host+":"+Conf.SMTP.Port, auth, Conf.SMTP.Sender, []string{email}, msg)
 	if err != nil {
 		logrus.Warning(err)
 	}
