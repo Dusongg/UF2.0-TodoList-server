@@ -5,7 +5,9 @@ FROM golang:1.22 AS builder
 WORKDIR /app
 
 # 将 go.mod 和 go.sum 复制到工作目录
-COPY go.mod go.sum ./
+#COPY go.mod go.sum ./config /app/
+COPY . .
+
 
 # 下载依赖
 RUN go mod download
@@ -15,6 +17,8 @@ COPY . .
 
 # 构建 Go 应用
 RUN go build -o myapp .
+RUN ls -R /app
+
 
 ## 使用官方 Ubuntu 镜像作为基础镜像
 #FROM ubuntu:22.04
@@ -22,20 +26,21 @@ RUN go build -o myapp .
 FROM debian:stable-slim
 
 #
-## 安装 Redis 和 MySQL 客户端
+### 安装 Redis 和 MySQL 客户端
 #RUN apt-get update && apt-get install -y \
 #    redis-tools \
 #    mysql-client \
 #    && rm -rf /var/lib/apt/lists/*
-#
+
 # 设置工作目录
 WORKDIR /app
 
 # 从构建阶段复制二进制文件到运行阶段
 COPY --from=builder /app/myapp .
+COPY ./config/config.json ./config/
 
 # 暴露应用使用的端口（根据需要修改）
-EXPOSE 8080
+EXPOSE 8001
 
 # 启动应用
 CMD ["./myapp"]

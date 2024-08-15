@@ -68,10 +68,10 @@ func NewConfig(filePath string) *Config {
 func (conf *Config) overrideWithEnvVars() {
 	now := time.Now()
 	if value, exists := os.LookupEnv("REDIS_HOST"); exists {
-		conf.Redis.Port = value
+		conf.Redis.Host = value
 	}
 	if value, exists := os.LookupEnv("REDIS_PORT"); exists {
-		conf.Redis.Host = value
+		conf.Redis.Port = value
 	}
 	if value, exists := os.LookupEnv("GORM_DNS"); exists {
 		conf.MySQL.GormDNS = value

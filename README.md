@@ -4,13 +4,27 @@
 
 1. `git pull git@github.com:Dusongg/UF2.0-TodoList-server.git`或`git pull https://github.com/Dusongg/UF2.0-TodoList-server.git`
 
-2. 进入项目文件，在docker-compose.yml文件目录下，运行`docker compose up`
+2. 
 
-3. 查看是否运行成功：`grpcurl -plaintext -d '{"name": "dusong"}' localhost:8001 notification.Service/SayHello`
+3. 进入项目文件，在docker-compose.yml文件目录下，运行`docker compose up`
 
-![image-20240815111932773](https://typora-dusong.oss-cn-chengdu.aliyuncs.com/image-20240815111932773.png)
+4. 查看是否运行成功
 
-- 所有API
+   1. `grpcurl -plaintext -d '{"name": "dusong"}' localhost:8001 notification.Service/SayHello`
 
-  ![image-20240815112412028](https://typora-dusong.oss-cn-chengdu.aliyuncs.com/image-20240815112412028.png)
+      ![image-20240815111932773](https://typora-dusong.oss-cn-chengdu.aliyuncs.com/image-20240815111932773.png)
+
+   2. `docker ps`![image-20240815131511204](https://typora-dusong.oss-cn-chengdu.aliyuncs.com/image-20240815131511204.png)
+
+
+
+
+
+
+
+
+
+所有API
+
+![image-20240815112412028](https://typora-dusong.oss-cn-chengdu.aliyuncs.com/image-20240815112412028.png)
 
