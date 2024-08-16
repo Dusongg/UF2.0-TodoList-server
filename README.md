@@ -2,12 +2,14 @@
 
 ## 1.1 Docker
 
-1. `git pull git@github.com:Dusongg/UF2.0-TodoList-server.git`或`git pull https://github.com/Dusongg/UF2.0-TodoList-server.git`
+1. `git clone git@github.com:Dusongg/UF2.0-TodoList-server.git`
+
+   或`git clone https://github.com/Dusongg/UF2.0-TodoList-server.git`
 
 2. 在docker-compose.yml文件目录下，运行`docker compose up`
 
 3. 查看是否运行成功
-   
+
    1. `grpcurl -plaintext -d '{"name": "dusong"}' localhost:8001 notification.Service/SayHello`
 
       ![image-20240815111932773](https://typora-dusong.oss-cn-chengdu.aliyuncs.com/image-20240815111932773.png)
@@ -68,7 +70,11 @@
 
 
 
-5. 运行`OrderManager.exe`文件
+5. 以Linux为例
+   1. `cd UF2.0-TodoList-server `
+   2. `go mod tidy`
+   3. `go run .`
+
 
 
 
