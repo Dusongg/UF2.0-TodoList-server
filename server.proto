@@ -42,14 +42,15 @@ service Service {
 
   //修改单/任务
   rpc GetTaskListAll (GetTaskListAllRequest) returns (GetTaskListAllReply);
-  rpc GetTaskListOne (GetTaskListOneRequest) returns (GetTaskListOneReply);
+  rpc GetTaskListByName (GetTaskListOneRequest) returns (GetTaskListOneReply);
+  rpc GetTaskById (GetTaskByIdRequest) returns (GetTaskByIdReply);
   rpc ImportXLSToTaskTable (ImportToTaskListRequest) returns (ImportToTaskListReply);
   //CURD
   rpc DelTask (DelTaskRequest) returns (DelTaskReply);
   rpc ModTask (ModTaskRequest) returns (ModTaskReply);
   rpc AddTask (AddTaskRequest) returns (AddTaskReply);
-  rpc QueryTaskWithSQL (QueryTaskWithSQLRequest) returns (QueryTaskWithSQLReply);
-  rpc QueryTaskWithField (QueryTaskWithFieldRequest) returns (QueryTaskWithFieldReply);
+  rpc QueryTaskBySQL (QueryTaskWithSQLRequest) returns (QueryTaskWithSQLReply);
+  rpc QueryTaskByField (QueryTaskWithFieldRequest) returns (QueryTaskWithFieldReply);
 
 
 
@@ -71,7 +72,6 @@ message LoginRequest {
 message LoginReply {
 }
 
-message GetTaskListAllRequest {}
 
 message task {
   string comment = 1;
@@ -83,8 +83,8 @@ message task {
   int64 estimatedWorkHours = 7;
   string state = 8;
   int32 typeId = 9;
-
 }
+message GetTaskListAllRequest {}
 
 message GetTaskListAllReply {
   repeated task tasks = 1;
@@ -97,6 +97,13 @@ message GetTaskListOneRequest {
 
 message GetTaskListOneReply {
   repeated task tasks = 1;
+}
+
+message GetTaskByIdRequest {
+  string taskId = 1;
+}
+message GetTaskByIdReply {
+  task t = 1;
 }
 
 
@@ -154,7 +161,6 @@ message ModTaskRequest {
   task t = 1;
   string user = 2;
 }
-
 message ModTaskReply {
 }
 

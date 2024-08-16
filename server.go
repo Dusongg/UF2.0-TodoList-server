@@ -117,13 +117,24 @@ func (s *server) GetTaskListAll(ctx context.Context, in *pb.GetTaskListAllReques
 	reply.Tasks = common.AllTaskInfoToPbTask(tasks)
 	return reply, nil
 }
-func (s *server) GetTaskListOne(ctx context.Context, in *pb.GetTaskListOneRequest) (*pb.GetTaskListOneReply, error) {
+
+func (s *server) GetTaskListByName(ctx context.Context, in *pb.GetTaskListOneRequest) (*pb.GetTaskListOneReply, error) {
 	var tasks []TaskInfo
 	if err := db.Where("principal = ?", in.Name).Find(&tasks).Error; err != nil {
 		return nil, err
 	}
 	reply := &pb.GetTaskListOneReply{}
 	reply.Tasks = common.AllTaskInfoToPbTask(tasks)
+	return reply, nil
+}
+
+func (s *server) GetTaskById(ctx context.Context, in *pb.GetTaskByIdRequest) (*pb.GetTaskByIdReply, error) {
+	var task TaskInfo
+	if err := db.Where("task_id = ?", in.TaskId).First(&task).Error; err != nil {
+		return nil, err
+	}
+	reply := &pb.GetTaskByIdReply{}
+	reply.T = common.OneTaskInfoToPbTask(task)
 	return reply, nil
 }
 
@@ -189,14 +200,14 @@ func (s *server) AddTask(ctx context.Context, in *pb.AddTaskRequest) (*pb.AddTas
 		return &pb.AddTaskReply{}, nil
 	}
 }
-func (s *server) QueryTaskWithSQL(ctx context.Context, in *pb.QueryTaskWithSQLRequest) (*pb.QueryTaskWithSQLReply, error) {
+func (s *server) QueryTaskBySQL(ctx context.Context, in *pb.QueryTaskWithSQLRequest) (*pb.QueryTaskWithSQLReply, error) {
 	var tasks []TaskInfo
 	db.Raw(in.Sql).Scan(tasks)
 	reply := &pb.QueryTaskWithSQLReply{}
 	reply.Tasks = common.AllTaskInfoToPbTask(tasks)
 	return reply, nil
 }
-func (s *server) QueryTaskWithField(ctx context.Context, in *pb.QueryTaskWithFieldRequest) (*pb.QueryTaskWithFieldReply, error) {
+func (s *server) QueryTaskByField(ctx context.Context, in *pb.QueryTaskWithFieldRequest) (*pb.QueryTaskWithFieldReply, error) {
 	var tasks []TaskInfo
 	whereCond := fmt.Sprintf(" %s = ?", in.Field)
 	if err := db.Where(whereCond, in.FieldValue).Find(&tasks).Error; err != nil {
