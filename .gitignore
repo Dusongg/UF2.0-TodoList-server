@@ -1,7 +1,2 @@
-go.mod
-go.sum
 *.xls
-*.exe
-*.exe~
-
 .idea
