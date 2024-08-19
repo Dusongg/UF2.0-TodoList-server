@@ -33,7 +33,7 @@
 
 2. 配置好mysql用户和密码，进入mysql`mysql -uroot -p`， 创建数据库`create database OrderManager`（数据库名可以更改，同时修改config.json文件内容）
 
-3. `git pull git@github.com:Dusongg/UF2.0-TodoList-server.git`或`git pull https://github.com/Dusongg/UF2.0-TodoList-server.git`拉取远程仓库到本地
+3. `git clone git@github.com:Dusongg/UF2.0-TodoList-server.git`或`git clone https://github.com/Dusongg/UF2.0-TodoList-server.git` 拉取远程仓库到本地
 
 4. 在`./config/config.json`文件下修改相应配置，大部分与**1.1**中的环境变量配置相同
 

@@ -4,6 +4,7 @@ import (
 	"OrderManager/models"
 	"OrderManager/pb"
 	"context"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
@@ -13,6 +14,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -90,7 +93,18 @@ func unaryInterceptor(
 }
 
 func main() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
+	go func() {
+		<-c
+		// 执行清理操作
+		for _, cliName := range NotificationServer.clients {
+			NotificationServer.rdb.Del(context.Background(), fmt.Sprintf("user:%s", cliName))
+			logrus.Info("Unsubscribed client:", cliName)
+		}
+		os.Exit(0)
+	}()
 	//sigs := make(chan os.Signal, 1)
 	//signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 

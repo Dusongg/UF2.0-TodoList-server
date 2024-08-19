@@ -1,9 +1,9 @@
 version: '3.8'
 
 services:
-  app:
+  app1:
     build: .
-    container_name: ordermanager
+    container_name: ordermanager1
     environment:
       GORM_DNS: ${GORM_DNS}
       REDIS_HOST: ${REDIS_HOST}
@@ -22,7 +22,34 @@ services:
       redis:
         condition: service_started
     ports:
-      - "8001:8001"
+      - "8001:8001"  # 暴露给宿主机的端口，可能不需要映射外部端口
+    restart: always
+
+
+  app2:
+    build: .
+    container_name: ordermanager2
+    environment:
+      GORM_DNS: ${GORM_DNS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_SENDER: ${SENDER}
+      EMAIL_SENDER_PASSWORD: ${PASSWORD}
+      SEND_MAIL_TIME_POINT1: ${SEND_MAIL_TIME_POINT1}  #9:00 AM
+      SEND_MAIL_TIME_POINT2: ${SEND_MAIL_TIME_POINT2}  #13:00 PM
+      LOG_PATH: ${LOG_PATH}
+      ADMIN: ${ADMIN}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8002:8001"  # 暴露给宿主机的端口，可能不需要映射外部端口
+    restart: always
+
 
   db:
     image: mysql:8.0
@@ -47,6 +74,17 @@ services:
     container_name: redis
     ports:
       - "16379:6379"
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app1
+      - app2
 
 volumes:
   db_data:

@@ -21,8 +21,8 @@ type notificationServer struct {
 }
 
 func (ns *notificationServer) checkIfLoggedIn(userName string) bool {
-	_, ok := ns.clients[userName]
-	return ok
+	cnt, _ := ns.rdb.Exists(context.Background(), userName).Result()
+	return cnt != 0
 }
 
 var NotificationServer = &notificationServer{
@@ -52,6 +52,7 @@ func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.N
 	ns.clients[req.ClientId] = stream
 	logrus.Infof("%s has subscribed\n", req.ClientId)
 	ns.mu.Unlock()
+	ns.rdb.Set(context.Background(), fmt.Sprintf("user:%s", req.ClientId), "online", 24*time.Hour)
 
 	//TODO: 没有做持久化
 	pubsub := ns.rdb.Subscribe(ns.ctx, "updates")
@@ -84,6 +85,7 @@ func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.N
 	delete(ns.clients, req.ClientId)
 	logrus.Info("Unsubscribed client:", req.ClientId)
 	ns.mu.Unlock()
+	ns.rdb.Del(context.Background(), fmt.Sprintf("user:%s", req.ClientId))
 
 	return nil
 }
