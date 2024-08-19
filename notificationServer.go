@@ -46,6 +46,29 @@ type modDeadlineInfo struct {
 	user        string
 }
 
+// 消息持久化存储
+func (ns *notificationServer) storeMessage(clientId, message string) {
+	ns.rdb.RPush(context.Background(), fmt.Sprintf("user:%s:messages", clientId), message)
+}
+
+// 获取并发送未读消息
+func (ns *notificationServer) sendPendingMessages(clientId string, stream pb.NotificationService_SubscribeServer) error {
+	messages, err := ns.rdb.LRange(context.Background(), fmt.Sprintf("user:%s:messages", clientId), 0, -1).Result()
+	if err != nil {
+		return err
+	}
+
+	for _, msg := range messages {
+		if err := stream.Send(&pb.Notification{Message: msg}); err != nil {
+			return err
+		}
+	}
+
+	// 删除已发送的消息
+	ns.rdb.Del(context.Background(), fmt.Sprintf("user:%s:messages", clientId))
+	return nil
+}
+
 // Subscribe 多个客户端调用
 func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.NotificationService_SubscribeServer) error {
 	ns.mu.Lock()
@@ -53,6 +76,11 @@ func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.N
 	logrus.Infof("%s has subscribed\n", req.ClientId)
 	ns.mu.Unlock()
 	ns.rdb.Set(context.Background(), fmt.Sprintf("user:%s", req.ClientId), "online", 24*time.Hour)
+
+	// 发送未读消息
+	if err := ns.sendPendingMessages(req.ClientId, stream); err != nil {
+		return err
+	}
 
 	//TODO: 没有做持久化
 	pubsub := ns.rdb.Subscribe(ns.ctx, "updates")
@@ -72,13 +100,20 @@ func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.N
 		}
 		from := matches[0][1]
 		to := matches[1][1]
-		if from == req.ClientId || (to != "ALL" && to != req.ClientId) {
-			//log.Printf("from:%s, to:%s, name: %s", from, to, req.ClientId)
-			continue
+
+		if from == req.ClientId {
+			if _, ok := ns.clients[to]; !ok {
+				ns.storeMessage(to, msg.Payload)
+			}
 		}
-		if err := stream.Send(&pb.Notification{Message: msg.Payload}); err != nil {
-			return err
+		if to == "ALL" || to == req.ClientId {
+			if err := stream.Send(&pb.Notification{Message: msg.Payload}); err != nil {
+				return err
+			}
 		}
+
+		// 如果用户在线，直接发送消息；否则存储消息
+
 	}
 
 	ns.mu.Lock()
