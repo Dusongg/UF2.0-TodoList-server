@@ -33,6 +33,7 @@ type Config struct {
 	//MySQLUserPassword string `json:"mysql_user_password"`
 
 	SMTP struct {
+		Switch         string `json:"switch"`
 		Host           string `json:"host"`
 		Port           string `json:"port"`
 		Sender         string `json:"sender"`
@@ -67,9 +68,14 @@ func NewConfig(filePath string) *Config {
 
 func (conf *Config) overrideWithEnvVars() {
 	now := time.Now()
+	if value, exists := os.LookupEnv("EMAIL_SWITCH"); exists {
+		conf.SMTP.Switch = value
+	}
+
 	if value, exists := os.LookupEnv("REDIS_HOST"); exists {
 		conf.Redis.Host = value
 	}
+
 	if value, exists := os.LookupEnv("REDIS_PORT"); exists {
 		conf.Redis.Port = value
 	}

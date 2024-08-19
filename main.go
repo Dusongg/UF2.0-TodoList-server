@@ -108,7 +108,9 @@ func main() {
 	//sigs := make(chan os.Signal, 1)
 	//signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	go emailClock()
+	if Conf.SMTP.Switch == "on" {
+		go emailClock()
+	}
 	//go func() {
 	//	for {
 	//		time.Sleep(3 * time.Second)

@@ -9,6 +9,7 @@
   },
 
   "smtp": {
+    "switch": "on",
     "host": "smtp.gmail.com",
     "port": "587",
     "sender" : "dusong700@gmail.com",
