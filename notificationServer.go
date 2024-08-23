@@ -105,6 +105,7 @@ func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.N
 			if _, ok := ns.clients[to]; !ok {
 				ns.storeMessage(to, msg.Payload)
 			}
+			continue
 		}
 		if to == "ALL" || to == req.ClientId {
 			if err := stream.Send(&pb.Notification{Message: msg.Payload}); err != nil {
