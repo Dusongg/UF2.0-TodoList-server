@@ -39,6 +39,7 @@ service Service {
   rpc Register (RegisterRequest) returns (RegisterReply);
   rpc GetUserInfo (GetUserInfoRequest) returns (GetUserInfoReply);
   rpc ModUserInfo (ModUserInfoRequest) returns (ModUserInfoReply);
+  rpc GetAllUserName (GetAllUserNameRequest) returns (GetAllUserNameReply);
 
   //修改单/任务
   rpc GetTaskListAll (GetTaskListAllRequest) returns (GetTaskListAllReply);
@@ -80,7 +81,7 @@ message task {
   string deadline = 4;
   string principal = 5;
   string reqNo = 6;
-  int64 estimatedWorkHours = 7;
+  int32 estimatedWorkHours = 7;
   string state = 8;
   int32 typeId = 9;
 }
@@ -244,6 +245,14 @@ message ModUserInfoRequest {
 }
 message ModUserInfoReply{
 }
+
+message  GetAllUserNameRequest {
+
+}
+message  GetAllUserNameReply {
+  repeated string names = 1;
+}
+
 
 message testRequest {
   string name = 1;

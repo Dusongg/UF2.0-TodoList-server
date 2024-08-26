@@ -106,6 +106,14 @@ func (s *server) ModUserInfo(ctx context.Context, in *pb.ModUserInfoRequest) (*p
 	}
 	return &pb.ModUserInfoReply{}, nil
 }
+func (s *server) GetAllUserName(ctx context.Context, in *pb.GetAllUserNameRequest) (*pb.GetAllUserNameReply, error) {
+	names := make([]string, 0)
+	res := db.Model(&UserInfo{}).Select("name").Scan(&names)
+	if res.Error != nil {
+		return &pb.GetAllUserNameReply{}, res.Error
+	}
+	return &pb.GetAllUserNameReply{Names: names}, nil
+}
 
 func (s *server) GetTaskListAll(ctx context.Context, in *pb.GetTaskListAllRequest) (*pb.GetTaskListAllReply, error) {
 	var tasks []TaskInfo

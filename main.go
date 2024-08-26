@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
@@ -48,18 +49,18 @@ func init() {
 	//logrus.Error(NotificationServer.rdb.Ping(context.Background()).Err())
 
 	// 设置日志
-	//logrus.SetOutput(&lumberjack.Logger{
-	//	Filename:   Conf.LogPath,
-	//	MaxSize:    100, // MB
-	//	MaxBackups: 30,
-	//	MaxAge:     0, // Disable age-based rotation
-	//	Compress:   true,
-	//})
+	logrus.SetOutput(&lumberjack.Logger{
+		Filename:   Conf.LogPath,
+		MaxSize:    100, // MB
+		MaxBackups: 30,
+		MaxAge:     0, // Disable age-based rotation
+		Compress:   true,
+	})
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	//测试
-	logrus.SetOutput(os.Stdout)
+	// logrus.SetOutput(os.Stdout)
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
 	if Conf.Redis.Port == "" || Conf.Redis.Host == "" || Conf.MySQL.GormDNS == "" {

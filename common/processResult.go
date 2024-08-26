@@ -16,7 +16,7 @@ func AllTaskInfoToPbTask(tasks []models.TaskInfo) []*pb.Task {
 			Deadline:           task.Deadline.Format("2006-01-02"), // 格式化日期
 			Principal:          task.Principal,
 			ReqNo:              task.ReqNo,
-			EstimatedWorkHours: int64(task.EstimatedWorkHours),
+			EstimatedWorkHours: int32(task.EstimatedWorkHours),
 			State:              task.State,
 			TypeId:             int32(task.Type),
 		}
@@ -32,7 +32,7 @@ func OneTaskInfoToPbTask(task models.TaskInfo) *pb.Task {
 		Deadline:           task.Deadline.Format("2006-01-02"), // 格式化日期
 		Principal:          task.Principal,
 		ReqNo:              task.ReqNo,
-		EstimatedWorkHours: int64(task.EstimatedWorkHours),
+		EstimatedWorkHours: int32(task.EstimatedWorkHours),
 		State:              task.State,
 		TypeId:             int32(task.Type),
 	}
@@ -50,7 +50,7 @@ func AllPbTaskToTaskInfo(tasks []*pb.Task) []models.TaskInfo {
 			Deadline:           t, // 格式化日期
 			Principal:          task.Principal,
 			ReqNo:              task.ReqNo,
-			EstimatedWorkHours: float64(task.EstimatedWorkHours),
+			EstimatedWorkHours: int8(float64(task.EstimatedWorkHours)),
 			State:              task.State,
 			Type:               int(task.TypeId),
 		}
@@ -67,7 +67,7 @@ func OnePbTaskToTaskInfo(task *pb.Task) *models.TaskInfo {
 		Deadline:           t, // 格式化日期
 		Principal:          task.Principal,
 		ReqNo:              task.ReqNo,
-		EstimatedWorkHours: float64(task.EstimatedWorkHours),
+		EstimatedWorkHours: int8(task.EstimatedWorkHours),
 		State:              task.State,
 		Type:               int(task.TypeId),
 	}

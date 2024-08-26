@@ -4,6 +4,8 @@ FROM golang:1.22 AS builder
 # 设置工作目录
 WORKDIR /app
 
+ENV GOPROXY=https://goproxy.cn,direct
+
 # 将 go.mod 和 go.sum 复制到工作目录
 #COPY go.mod go.sum ./config /app/
 COPY . .
@@ -17,20 +19,22 @@ COPY . .
 
 # 构建 Go 应用
 RUN go build -o myapp .
-RUN ls -R /app
+# RUN ls -R /app
 
 
 ## 使用官方 Ubuntu 镜像作为基础镜像
-#FROM ubuntu:22.04
+FROM ubuntu:22.04
 # 使用官方 Debian 镜像作为运行阶段的基础镜像
-FROM debian:stable-slim
+# FROM debian:stable-slim
+
+# FORM bookworm-slim
 
 #
 ### 安装 Redis 和 MySQL 客户端
-#RUN apt-get update && apt-get install -y \
-#    redis-tools \
-#    mysql-client \
-#    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+   redis-tools \
+   mysql-client \
+   && rm -rf /var/lib/apt/lists/*
 
 # 设置工作目录
 WORKDIR /app
