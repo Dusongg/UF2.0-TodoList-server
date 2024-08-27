@@ -1,39 +1,69 @@
-time="2024-08-14T11:24:55+08:00" level=info msg="正在监听端口：[::]:8001"
-time="2024-08-14T11:25:16+08:00" level=info msg="Received request from:Peer{Addr: '[::1]:63092', LocalAddr: '[::1]:8001', AuthInfo: <nil>}"
-time="2024-08-14T11:25:16+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T11:25:16+08:00" level=info msg="Received request from:Peer{Addr: '[::1]:63092', LocalAddr: '[::1]:8001', AuthInfo: <nil>}"
-time="2024-08-14T11:28:42+08:00" level=info msg="正在监听端口：[::]:8001"
-time="2024-08-14T11:28:48+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T11:28:52+08:00" level=info msg="Unsubscribed client:dusong"
-time="2024-08-14T13:00:21+08:00" level=warning msg="dial tcp 64.233.188.108:587: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond."
-time="2024-08-14T13:12:59+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T13:13:57+08:00" level=info msg="Unsubscribed client:dusong"
-time="2024-08-14T13:14:35+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T13:15:47+08:00" level=info msg="Unsubscribed client:dusong"
-time="2024-08-14T13:54:27+08:00" level=info msg="正在监听端口：[::]:8001"
-time="2024-08-14T13:54:49+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T14:58:31+08:00" level=info msg="正在监听端口：[::]:8001"
-time="2024-08-14T14:58:45+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T15:07:30+08:00" level=info msg="正在监听端口：[::]:8001"
-time="2024-08-14T15:08:08+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T15:08:32+08:00" level=info msg="Unsubscribed client:dusong"
-time="2024-08-14T15:21:58+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T15:22:04+08:00" level=info msg="Unsubscribed client:dusong"
-time="2024-08-14T15:56:53+08:00" level=info msg="正在监听端口：[::]:8001"
-time="2024-08-14T15:57:09+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T15:57:17+08:00" level=warning msg="Error updating database: dial tcp :0: connectex: The requested address is not valid in its context."
-time="2024-08-14T15:58:36+08:00" level=warning msg="Error updating database: dial tcp :0: connectex: The requested address is not valid in its context."
-time="2024-08-14T16:03:27+08:00" level=info msg="正在监听端口：[::]:8001"
-time="2024-08-14T16:03:37+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T16:04:52+08:00" level=info msg="dusong2 has subscribed\n"
-time="2024-08-14T16:05:06+08:00" level=warning msg="Error updating database: dial tcp :0: connectex: The requested address is not valid in its context."
-time="2024-08-14T16:05:15+08:00" level=warning msg="Error updating database: dial tcp :0: connectex: The requested address is not valid in its context."
-time="2024-08-14T16:05:24+08:00" level=info msg="Unsubscribed client:dusong2"
-time="2024-08-14T16:05:25+08:00" level=info msg="Unsubscribed client:dusong"
-time="2024-08-14T16:13:03+08:00" level=info msg="正在监听端口：[::]:8001"
-time="2024-08-14T16:13:11+08:00" level=info msg="dusong2 has subscribed\n"
-time="2024-08-14T16:13:12+08:00" level=info msg="Unsubscribed client:dusong2"
-time="2024-08-14T16:13:21+08:00" level=info msg="dusong has subscribed\n"
-time="2024-08-14T16:14:11+08:00" level=info msg="dusong2 has subscribed\n"
-time="2024-08-14T16:20:40+08:00" level=info msg="Unsubscribed client:dusong"
-time="2024-08-14T16:21:05+08:00" level=info msg="Unsubscribed client:dusong2"
+{"level":"info","msg":"Unsubscribed client:\u0026{0xc0002841e0}","time":"2024-08-26T16:57:32+08:00"}
+{"level":"info","msg":"正在监听端口：[::]:8001","time":"2024-08-26T16:57:37+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T16:57:42+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:54+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"warning","msg":"Error 1406 (22001): Data too long for column 'comment' at row 1","time":"2024-08-26T16:57:55+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:05:11+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:05:24+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:07:00+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:07:10+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:09:09+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:09:18+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:27:10+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:27:24+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:30:41+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:30:50+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:36:34+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:36:43+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:38:10+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:38:20+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:39:11+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:39:26+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:39:42+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:39:53+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:40:38+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:40:48+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:41:53+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:42:03+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:42:13+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-26T17:42:23+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-26T17:44:34+08:00"}
+{"level":"info","msg":"正在监听端口：[::]:8001","time":"2024-08-27T09:06:57+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-27T09:07:10+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-27T09:11:12+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-27T09:11:32+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-27T09:11:45+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-27T09:12:24+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-27T09:14:06+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-27T09:14:17+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-27T09:14:42+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-27T09:15:00+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-27T09:16:59+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-27T09:17:23+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-27T09:17:28+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-27T09:20:55+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-27T09:21:04+08:00"}
+{"level":"info","msg":"dusong has subscribed\n","time":"2024-08-27T09:22:03+08:00"}
+{"level":"info","msg":"Unsubscribed client:dusong","time":"2024-08-27T09:22:49+08:00"}

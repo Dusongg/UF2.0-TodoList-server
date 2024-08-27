@@ -155,8 +155,22 @@ func (s *server) ImportXLSToTaskTable(ctx context.Context, in *pb.ImportToTaskLi
 		if res.Error == nil {
 			res.Scan(&taskInfo.Deadline)
 		}
-		if err := tx.Create(&taskInfo).Error; err != nil {
+		var userinfo UserInfo
+		if err := db.Where("name = ?", taskInfo.Principal).First(&userinfo).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			userinfo.JobNo = 0
+			userinfo.Group = 0
+			userinfo.RoleNo = 0
+			userinfo.Name = taskInfo.Principal
+			userinfo.Password = "123123"
+			if err := db.Create(&userinfo).Error; err != nil {
+				tx.Rollback()
+				logrus.Warning(err)
+				continue
+			}
+		}
+		if err := db.Create(&taskInfo).Error; err != nil {
 			logrus.Warning(err)
+			tx.Rollback()
 			continue
 		}
 
@@ -200,6 +214,12 @@ func (s *server) AddTask(ctx context.Context, in *pb.AddTaskRequest) (*pb.AddTas
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) { //查找出错，且不是没有找到的错误
 		return nil, err
 	}
+	//判断添加任务额所属人是否存在
+	var userInfo UserInfo
+	if err := db.Where("name = ?", in.T.Principal).First(&userInfo).Error; errors.Is(err, gorm.ErrRecordNotFound) { //有重复task_id
+		return nil, errors.New("principal not exists")
+	}
+
 	if err := db.Create(common.OnePbTaskToTaskInfo(in.T)).Error; err != nil {
 		return nil, err
 	} else {

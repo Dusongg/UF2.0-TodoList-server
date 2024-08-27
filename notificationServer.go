@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
-	"log"
 	"regexp"
 	"sync"
 	"time"
@@ -32,7 +31,7 @@ var NotificationServer = &notificationServer{
 }
 
 func (ns *notificationServer) updateDatabaseAndNotify(updateData string) {
-	log.Println(updateData)
+	//log.Println(updateData)
 	msg := fmt.Sprintf("%s: %s -- refresh to view", time.Now().Format("2006-01-02 15:04:05"), updateData)
 	if err := ns.rdb.Publish(context.Background(), "updates", msg).Err(); err != nil {
 		logrus.Warningf("Error updating database: %v", err)
