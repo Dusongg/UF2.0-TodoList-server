@@ -230,7 +230,7 @@ func (s *server) AddTask(ctx context.Context, in *pb.AddTaskRequest) (*pb.AddTas
 }
 func (s *server) QueryTaskBySQL(ctx context.Context, in *pb.QueryTaskWithSQLRequest) (*pb.QueryTaskWithSQLReply, error) {
 	var tasks []TaskInfo
-	db.Raw(in.Sql).Scan(tasks)
+	db.Raw(in.Sql).Scan(&tasks)
 	reply := &pb.QueryTaskWithSQLReply{}
 	reply.Tasks = common.AllTaskInfoToPbTask(tasks)
 	return reply, nil

@@ -84,7 +84,7 @@ func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.N
 	//TODO: 没有做持久化
 	pubsub := ns.rdb.Subscribe(ns.ctx, "updates")
 	ch := pubsub.Channel()
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(2 * time.Minute)
 	defer ticker.Stop()
 	go func() {
 		for {
