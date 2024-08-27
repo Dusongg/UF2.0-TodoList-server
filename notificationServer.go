@@ -84,10 +84,21 @@ func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.N
 	//TODO: 没有做持久化
 	pubsub := ns.rdb.Subscribe(ns.ctx, "updates")
 	ch := pubsub.Channel()
-
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
 	go func() {
-		<-stream.Context().Done()
-		pubsub.Close() // 关闭 Redis 订阅以退出 for 循环
+		for {
+			select {
+			case <-ticker.C:
+				if err := stream.Send(&pb.Notification{Message: "ping"}); err != nil {
+					logrus.Warningf("Error sending ping: %v", err)
+				}
+			case <-stream.Context().Done():
+				pubsub.Close() // 关闭 Redis 订阅以退出 for 循环
+				return
+			}
+		}
+
 	}()
 
 	for msg := range ch {
@@ -119,6 +130,7 @@ func (ns *notificationServer) Subscribe(req *pb.SubscriptionRequest, stream pb.N
 	ns.mu.Lock()
 	delete(ns.clients, req.ClientId)
 	logrus.Info("Unsubscribed client:", req.ClientId)
+
 	ns.mu.Unlock()
 	ns.rdb.Del(context.Background(), fmt.Sprintf("user:%s", req.ClientId))
 

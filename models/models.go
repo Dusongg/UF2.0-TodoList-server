@@ -1,6 +1,7 @@
 package models
 
 import (
+	"gorm.io/gorm"
 	"time"
 )
 
@@ -41,6 +42,7 @@ func (PatchsInfo) TableName() string {
 }
 
 type UserInfo struct {
+	gorm.Model
 	Name     string `gorm:"column:name;type:varchar(20);not null;index;comment:姓名"`
 	JobNo    int32  `gorm:"column:job_no;not null;comment:工号"`
 	Password string `gorm:"column:password;type:varchar(60);not null;comment:密码"`
