@@ -47,7 +47,9 @@ type modDeadlineInfo struct {
 
 // 消息持久化存储
 func (ns *notificationServer) storeMessage(clientId, message string) {
-	ns.rdb.RPush(context.Background(), fmt.Sprintf("user:%s:messages", clientId), message)
+	key := fmt.Sprintf("user:%s:messages", clientId)
+	ns.rdb.RPush(ns.ctx, key, message)
+	ns.rdb.Expire(ns.ctx, fmt.Sprintf(key, clientId), time.Hour*24)
 }
 
 // 获取并发送未读消息
