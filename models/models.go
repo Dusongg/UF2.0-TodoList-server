@@ -12,7 +12,7 @@ import (
 
 type TaskInfo struct {
 	TaskID             string    `gorm:"column:task_id;type:varchar(25);primaryKey;not null;comment:任务单号"`
-	Comment            string    `gorm:"column:comment;type:varchar(100);comment:任务描述"`
+	Comment            string    `gorm:"column:comment;type:varchar(1000);comment:任务描述"`
 	EmergencyLevel     int       `gorm:"column:emergency_level;default:0;comment:紧急程度"`
 	Deadline           time.Time `gorm:"column:deadline;type:date;default:(date_format((now() + interval 3 day),_utf8mb4'%Y-%m-%d'));comment:截止日期"`
 	Principal          string    `gorm:"column:principal;type:varchar(20);not null;comment:负责人"`

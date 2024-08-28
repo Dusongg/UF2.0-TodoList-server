@@ -324,3 +324,37 @@ func (UserInfo) TableName() string {
 - **HTTP**：作为Web应用的基础协议，HTTP有着广泛的生态系统支持和兼容性。几乎所有编程语言和平台都支持HTTP。
 - **gRPC**：gRPC提供了跨语言支持，但在一些特定场景下（如浏览器端）不如HTTP普遍。此外，gRPC对客户端和服务端都需要依赖Protobuf定义文件，这可能增加复杂性。
 
+
+
+
+
+# 进入容器内部，使用mysql客户端与redis-cli
+
+```bash
+docker exec -it ordermanager1 bash
+
+mysql -uroot -p -h db   
+ 
+redis-cli -h redis --raw
+```
+
+
+
+# 问题
+
+## 1. mysql中文乱码
+
+1. ![image-20240828155001025](https://typora-dusong.oss-cn-chengdu.aliyuncs.com/image-20240828155001025.png)
+2. `SET NAMES 'utf8mb4';`
+3. ![image-20240828155046648](https://typora-dusong.oss-cn-chengdu.aliyuncs.com/image-20240828155046648.png)
+
+## 2. redis-cli中文显示十六进制编码
+
+- 添加`--raw`选项
+
+```
+redis-cli -h redis --raw
+```
+
+
+
