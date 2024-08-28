@@ -152,8 +152,13 @@ func (s *server) ImportXLSToTaskTable(ctx context.Context, in *pb.ImportToTaskLi
 	tx := db.Begin()
 	for _, taskInfo := range taskInfos {
 		res := db.Model(&PatchsInfo{}).Where("req_no = ?", taskInfo.ReqNo).Select("deadline")
+		//两个时间选较小值
 		if res.Error == nil {
-			res.Scan(&taskInfo.Deadline)
+			var patchesTime time.Time
+			res.Scan(&patchesTime)
+			if patchesTime.Before(taskInfo.Deadline) {
+				taskInfo.Deadline = patchesTime
+			}
 		}
 		var userinfo UserInfo
 		if err := db.Where("name = ?", taskInfo.Principal).First(&userinfo).Error; errors.Is(err, gorm.ErrRecordNotFound) {

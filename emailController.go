@@ -79,7 +79,7 @@ func sendEmail(name string, email string) {
 	}
 	msg := make([]byte, 0)
 	for _, content := range contents {
-		row := fmt.Sprintf("task_id:%s req_no:%s deadline:%s comment:%s taskTime:%s\n", content.taskId, content.reqNo, content.deadline, content.comment, content.estimatedWorkHour)
+		row := fmt.Sprintf("task_id:%s req_no:%s deadline:%s comment:%s taskTime:%f\n", content.taskId, content.reqNo, content.deadline, content.comment, content.estimatedWorkHour)
 		msg = append(msg, []byte(row)...)
 	}
 	auth := smtp.PlainAuth("", Conf.SMTP.Sender, Conf.SMTP.SenderPassword, Conf.SMTP.Host)
