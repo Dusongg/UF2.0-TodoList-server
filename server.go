@@ -157,11 +157,14 @@ func (s *server) ImportXLSToTaskTable(ctx context.Context, in *pb.ImportToTaskLi
 		}
 		var userinfo UserInfo
 		if err := db.Where("name = ?", taskInfo.Principal).First(&userinfo).Error; errors.Is(err, gorm.ErrRecordNotFound) {
-			userinfo.JobNo = 0
-			userinfo.Group = 0
-			userinfo.RoleNo = 0
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte("123123"), bcrypt.DefaultCost)
+			if err != nil {
+				tx.Rollback()
+				logrus.Warning(err)
+				continue
+			}
 			userinfo.Name = taskInfo.Principal
-			userinfo.Password = "123123"
+			userinfo.Password = string(hashedPassword)
 			if err := db.Create(&userinfo).Error; err != nil {
 				tx.Rollback()
 				logrus.Warning(err)
