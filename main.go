@@ -110,7 +110,7 @@ func main() {
 	//signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	if Conf.SMTP.Switch == "on" {
-		go emailClock()
+		go improvedEmailClock()
 	}
 	//go func() {
 	//	for {

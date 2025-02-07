@@ -7,6 +7,7 @@ import (
 	"net/smtp"
 	"sync"
 	"time"
+	"github.com/robfig/cron"
 )
 
 func testSendEmail() {
@@ -22,27 +23,14 @@ func testSendEmail() {
 	}
 }
 
-func emailClock() {
-	for {
-		now := time.Now()
-
-		if now.After(Conf.SMTP.P1) {
-			Conf.SMTP.P1 = Conf.SMTP.P1.Add(24 * time.Hour)
-		}
-		if now.After(Conf.SMTP.P2) {
-			Conf.SMTP.P2 = Conf.SMTP.P2.Add(24 * time.Hour)
-		}
-
-		// 等待到下一个发送时间
-		if Conf.SMTP.P1.Before(Conf.SMTP.P2) {
-			time.Sleep(Conf.SMTP.P1.Sub(now))
-			queryAndSendEmail()
-
-		} else {
-			time.Sleep(Conf.SMTP.P2.Sub(now))
-			queryAndSendEmail()
-		}
-	}
+func improvedEmailClock() {
+	scheduler := cron.New()
+	
+	// 添加定时任务
+	scheduler.AddFunc("0 9 * * *", queryAndSendEmail)  // 每天9点
+	scheduler.AddFunc("0 13 * * *", queryAndSendEmail) // 每天13点
+	
+	scheduler.Start()
 }
 
 func queryAndSendEmail() {
